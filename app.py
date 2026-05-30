@@ -14,50 +14,50 @@ ticker = st.text_input("🔍 Enter NSE Stock Symbol", value="DIXON.NS")
 
 if st.button("🚀 Analyze Stock", type="primary"):
     try:
-        with st.spinner("Fetching live data... please wait"):
-            time.sleep(3)
+        with st.spinner("Fetching data..."):
+            time.sleep(5)
             stock = yf.Ticker(ticker)
-            df = stock.history(period="1y")
-            info = stock.fast_info
-            quote = stock.info
+            df = stock.history(period="1y", auto_adjust=True)
+            
+            if df.empty:
+                st.error("No data found! Check stock symbol and try again.")
+                st.stop()
 
-        # COMPANY OVERVIEW
-        st.markdown("## 🏢 Company Overview")
-        col1, col2 = st.columns([2,1])
-        with col1:
-            st.markdown(f"### {quote.get('longName', ticker)}")
-            st.markdown(f"**Sector:** {quote.get('sector', 'N/A')} | **Industry:** {quote.get('industry', 'N/A')}")
-            st.markdown(f"**Website:** {quote.get('website', 'N/A')}")
-            st.markdown("#### 📋 About")
-            st.write(quote.get('longBusinessSummary', 'No description available'))
-        with col2:
-            st.markdown("#### 🔑 Key Info")
-            st.info(f"""
-**Exchange:** NSE/BSE
-**Country:** India
-**Currency:** INR
-**Employees:** {quote.get('fullTimeEmployees', 'N/A'):,} if isinstance(quote.get('fullTimeEmployees'), int) else 'N/A'
-            """)
+        # COMPANY INFO
+        try:
+            quote = stock.info
+            st.markdown("## 🏢 Company Overview")
+            col1, col2 = st.columns([2,1])
+            with col1:
+                st.markdown(f"### {quote.get('longName', ticker)}")
+                st.markdown(f"**Sector:** {quote.get('sector', 'N/A')} | **Industry:** {quote.get('industry', 'N/A')}")
+                desc = quote.get('longBusinessSummary', 'No description available')
+                st.write(desc[:500] + "..." if len(desc) > 500 else desc)
+            with col2:
+                employees = quote.get('fullTimeEmployees', 'N/A')
+                st.info(f"""
+**Exchange:** NSE
+**Country:** India  
+**Employees:** {employees:,} if isinstance(employees, int) else employees
+**Website:** {quote.get('website', 'N/A')}
+                """)
+        except:
+            st.warning("Company info loading slowly — showing price data below")
 
         # KEY METRICS
         st.markdown("---")
         st.markdown("## 📊 Key Metrics")
-        col1, col2, col3, col4, col5, col6 = st.columns(6)
-        col1.metric("💰 Price", f"₹{round(info.last_price, 2)}")
-        col2.metric("📈 52W High", f"₹{round(info.year_high, 2)}")
-        col3.metric("📉 52W Low", f"₹{round(info.year_low, 2)}")
-        col4.metric("🏢 Mkt Cap", f"₹{round(info.market_cap/1e9, 2)}B")
-        col5.metric("📊 P/E", round(quote.get('trailingPE', 0), 1))
-        col6.metric("📚 P/B", round(quote.get('priceToBook', 0), 1))
-
-        st.markdown("---")
-        st.markdown("## 📐 Fundamental Ratios")
-        col1, col2, col3, col4, col5 = st.columns(5)
-        col1.metric("ROE %", f"{round(quote.get('returnOnEquity', 0)*100, 1)}%")
-        col2.metric("ROCE %", f"{round(quote.get('returnOnAssets', 0)*100, 1)}%")
-        col3.metric("Debt/Equity", round(quote.get('debtToEquity', 0), 2))
-        col4.metric("Div Yield", f"{round(quote.get('dividendYield', 0)*100, 2)}%")
-        col5.metric("Book Value", f"₹{round(quote.get('bookValue', 0), 2)}")
+        try:
+            info = stock.fast_info
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("💰 Price", f"₹{round(info.last_price, 2)}")
+            col2.metric("📈 52W High", f"₹{round(info.year_high, 2)}")
+            col3.metric("📉 52W Low", f"₹{round(info.year_low, 2)}")
+            col4.metric("🏢 Mkt Cap", f"₹{round(info.market_cap/1e9, 2)}B")
+        except:
+            col1, col2 = st.columns(2)
+            col1.metric("Current Price", f"₹{round(df['Close'].iloc[-1], 2)}")
+            col2.metric("1Y Return", f"{round(((df['Close'].iloc[-1]/df['Close'].iloc[0])-1)*100, 2)}%")
 
         # PRICE CHART
         st.markdown("---")
@@ -72,7 +72,7 @@ if st.button("🚀 Analyze Stock", type="primary"):
 
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name='Price', line=dict(color='white')))
-        fig.add_trace(go.Scatter(x=df.index, y=df['MA50'], name='50 Day MA', line=dict(color='blue')))
+        fig.add_trace(go.Scatter(x=df.index, y=df['MA50'], name='50 Day MA', line=dict(color='#00bfff')))
         fig.add_trace(go.Scatter(x=df.index, y=df['MA200'], name='200 Day MA', line=dict(color='orange')))
         fig.update_layout(template='plotly_dark', title=f'{ticker} - Price Chart')
         st.plotly_chart(fig, use_container_width=True)
@@ -96,15 +96,12 @@ if st.button("🚀 Analyze Stock", type="primary"):
                 income = stock.financials.T
                 income.index = income.index.year
                 income = income.sort_index()
-                cols = ['Total Revenue', 'Gross Profit', 'Net Income']
-                cols = [c for c in cols if c in income.columns]
-                income_show = income[cols] / 1e7
-                income_show.columns = [c + ' (₹ Cr)' for c in cols]
-                st.dataframe(income_show.style.format("{:,.0f}"))
+                cols = [c for c in ['Total Revenue','Gross Profit','Net Income'] if c in income.columns]
+                st.dataframe((income[cols]/1e7).style.format("{:,.0f}"))
                 fig3 = go.Figure()
                 for col in cols:
                     fig3.add_trace(go.Bar(name=col, x=income.index.astype(str), y=income[col]/1e7))
-                fig3.update_layout(template='plotly_dark', title='Revenue & Profit Trend (₹ Cr)', barmode='group')
+                fig3.update_layout(template='plotly_dark', title='Revenue & Profit (₹ Cr)', barmode='group')
                 st.plotly_chart(fig3, use_container_width=True)
             except:
                 st.warning("Income statement data not available")
@@ -114,15 +111,13 @@ if st.button("🚀 Analyze Stock", type="primary"):
                 balance = stock.balance_sheet.T
                 balance.index = balance.index.year
                 balance = balance.sort_index()
-                cols = ['Total Assets', 'Total Liabilities Net Minority Interest', 'Stockholders Equity']
-                cols = [c for c in cols if c in balance.columns]
-                balance_show = balance[cols] / 1e7
-                st.dataframe(balance_show.style.format("{:,.0f}"))
+                cols = [c for c in ['Total Assets','Total Liabilities Net Minority Interest','Stockholders Equity'] if c in balance.columns]
+                st.dataframe((balance[cols]/1e7).style.format("{:,.0f}"))
                 fig4 = go.Figure()
                 fig4.add_trace(go.Bar(name='Assets', x=balance.index.astype(str), y=balance['Total Assets']/1e7))
                 if 'Stockholders Equity' in balance.columns:
                     fig4.add_trace(go.Bar(name='Equity', x=balance.index.astype(str), y=balance['Stockholders Equity']/1e7))
-                fig4.update_layout(template='plotly_dark', title='Balance Sheet Trend (₹ Cr)', barmode='group')
+                fig4.update_layout(template='plotly_dark', title='Balance Sheet (₹ Cr)', barmode='group')
                 st.plotly_chart(fig4, use_container_width=True)
             except:
                 st.warning("Balance sheet data not available")
@@ -132,15 +127,12 @@ if st.button("🚀 Analyze Stock", type="primary"):
                 cashflow = stock.cashflow.T
                 cashflow.index = cashflow.index.year
                 cashflow = cashflow.sort_index()
-                cols = ['Operating Cash Flow', 'Free Cash Flow']
-                cols = [c for c in cols if c in cashflow.columns]
-                cashflow_show = cashflow[cols] / 1e7
-                cashflow_show.columns = [c + ' (₹ Cr)' for c in cols]
-                st.dataframe(cashflow_show.style.format("{:,.0f}"))
+                cols = [c for c in ['Operating Cash Flow','Free Cash Flow'] if c in cashflow.columns]
+                st.dataframe((cashflow[cols]/1e7).style.format("{:,.0f}"))
                 fig5 = go.Figure()
                 for col in cols:
                     fig5.add_trace(go.Bar(name=col, x=cashflow.index.astype(str), y=cashflow[col]/1e7))
-                fig5.update_layout(template='plotly_dark', title='Cash Flow Trend (₹ Cr)', barmode='group')
+                fig5.update_layout(template='plotly_dark', title='Cash Flow (₹ Cr)', barmode='group')
                 st.plotly_chart(fig5, use_container_width=True)
             except:
                 st.warning("Cash flow data not available")
@@ -151,8 +143,6 @@ if st.button("🚀 Analyze Stock", type="primary"):
                 if holders is not None and not holders.empty:
                     st.markdown("### 🏦 Top Institutional Investors")
                     st.dataframe(holders)
-                else:
-                    st.warning("Institutional investor data not available")
                 major = stock.major_holders
                 if major is not None and not major.empty:
                     st.markdown("### 📊 Shareholding Pattern")
@@ -217,5 +207,5 @@ if st.button("🚀 Analyze Stock", type="primary"):
         st.caption("Built by Pratyush Singh | MBA Banking & Financial Engineering | CU")
 
     except Exception as e:
-        st.error("⚠️ Data fetch failed! Please wait 30 seconds and try again.")
-        st.info("💡 Yahoo Finance rate limit — wait a moment and retry!")
+        st.error(f"⚠️ Error: {str(e)[:100]}")
+        st.info("💡 Try again in 2-3 minutes — Yahoo Finance rate limit reset hoga!")
