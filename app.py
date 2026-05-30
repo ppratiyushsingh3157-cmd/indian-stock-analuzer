@@ -166,7 +166,7 @@ try:
     day_change_p = round((day_change / prev_close) * 100, 2)
     returns_1y = round(((df_1y["Close"].iloc[-1] / df_1y["Close"].iloc[0]) - 1) * 100, 2) if not df_1y.empty else 0.0
 
-    # Initialize standard placeholders 
+    # Fundamentals Baseline Setup
     pe = pb = roe = book_value = debt_eq = div = face_value = eps = peg = roa = 0
     roce = "N/A"
     
@@ -177,7 +177,7 @@ try:
         roe_val = info.get("returnOnEquity", 0) or 0
         roe = round(roe_val * 100, 1) if roe_val else 0.0
         
-        # Safe ROCE calculation logic to avoid garbage metrics overflow
+        # ROCE Sanity Filter to avoid negative crash values
         financials = stock.financials
         balance_sheet = stock.balance_sheet
         
@@ -190,7 +190,6 @@ try:
                 
                 if cap_employed > 0 and ebit != 0:
                     calculated_roce = (ebit / cap_employed) * 100
-                    # Standard filtering parameters for safety check
                     if 0 < calculated_roce < 120:
                         roce = round(calculated_roce, 1)
                     else:
@@ -220,7 +219,7 @@ try:
         sector = "Technology"
         industry = "Industrial Grid"
 
-    # ── Master Header Block ──────────────────────────────────
+    # ── Top Panel Metrics Display ───────────────────────────
     chg_color = "#26a641" if day_change >= 0 else "#da3633"
     chg_icon = "▲" if day_change >= 0 else "▼"
 
@@ -239,7 +238,7 @@ try:
     </div>
     """, unsafe_allow_html=True)
 
-    # Fundamental Grid Row 1
+    # Grid System Rows
     m1, m2, m3, m4, m5 = st.columns(5)
     m1.metric("Market Capitalization", f"₹{mkt_cap:,.0f} Cr")
     m2.metric("Current Quote Price", f"₹{current:,}")
@@ -247,10 +246,9 @@ try:
     m4.metric("Trailing P/E Vector", f"{pe}x" if pe else "N/A")
     m5.metric("Net Asset Book Value", f"₹{book_value}")
 
-    # Fundamental Grid Row 2
     m6, m7, m8, m9, m10 = st.columns(5)
     m6.metric("Dividend Yield Ratio", f"{div}%" if div else "0.00%")
-    m7.metric("ROCE %", f"{roce}%" if isinstance(roce, str) else f"{roce}%")
+    m7.metric("ROCE %", f"{roce}%")
     m8.metric("ROE %", f"{roe}%" if roe else "N/A")
     m9.metric("Par Face Value", f"₹{face_value}")
     m10.metric("Compounded 1Y Return", f"{returns_1y}%")
@@ -266,7 +264,7 @@ try:
         "📈 Strategic SWOT Profiler"
     ])
 
-    # ── TAB 1: CHARTS ────────────────────────────────────────
+    # ── TAB 1: TECHNICAL CHARTS ──────────────────────────────
     with t1:
         df["MA50"] = df["Close"].rolling(50).mean()
         df["MA200"] = df["Close"].rolling(200).mean()
@@ -287,7 +285,7 @@ try:
         fig.update_layout(template="plotly_dark", paper_bgcolor="#0a0e1a", plot_bgcolor="#0d1117", height=500, xaxis_rangeslider_visible=False, margin=dict(l=10, r=10, t=10, b=10))
         st.plotly_chart(fig, use_container_width=True)
 
-    # ── TAB 2: OVERVIEW ──────────────────────────────────────
+    # ── TAB 2: OPERATIONAL RATIOS ────────────────────────────
     with t2:
         st.markdown("### Profile Summary")
         st.write(description)
@@ -298,9 +296,9 @@ try:
         c1.metric("Price to Book (P/B)", f"{pb}x" if pb else "N/A")
         c2.metric("Debt to Equity", f"{debt_eq}" if debt_eq else "0.0")
         c3.metric("Return on Assets (ROA)", f"{roa}%")
-        c4.metric("PEG Ratio", f"{peg}" if peg else "N/A", help="P/E to Growth ratio")
+        c4.metric("PEG Ratio", f"{peg}" if peg else "N/A", help="Price/Earnings to Growth baseline mapping")
 
-    # ── TAB 3: ACCOUNTING SHEETS ─────────────────────────────
+    # ── TAB 3: ACCOUNTING DATA TABLES ────────────────────────
     with t3:
         st.markdown("### Core Financial Statements *(Figures scaled in Rs. Crores)*")
         sub_tabs = st.tabs(["Income Statement", "Balance Sheet", "Cash Flow"])
@@ -325,11 +323,10 @@ try:
             try: st.dataframe(format_to_crores(stock.cashflow.iloc[:12]), use_container_width=True)
             except: st.info("Cash tracking dataset offline.")
 
-    # ── TAB 4: ADVANCED FINANCIAL MODELING ────────────────────
+    # ── TAB 4: ADVANCED QUANT VALUATION MODEL ─────────────────
     with t4:
         st.markdown("## 💎 Institutional Financial Modeling Vault")
         st.markdown("---")
-        
         st.markdown("### ⚙️ Financial Architecture Assumptions")
         c_mod1, c_mod2, c_mod3 = st.columns(3)
         with c_mod1:
@@ -353,7 +350,6 @@ try:
                 
             if fcf_base and not pd.isna(fcf_base) and fcf_base > 0 and shares_outstanding:
                 has_valid_valuation = True
-                
                 projected_fcf = []
                 discounted_fcf = []
                 current_fcf = fcf_base
@@ -404,14 +400,14 @@ try:
             })
             st.dataframe(model_df, use_container_width=True, hide_index=True)
         else:
-            st.warning("⚠️ Institutional Statement Notice: Yahoo Finance has missing trailing Cash Flow statements for this specific ticker. Defaulting to earnings multiple benchmarks.")
+            st.warning("⚠️ Institutional Statement Notice: Cash statement streams require manual fallback modeling due to yfinance API layout limits.")
             
         if eps > 0:
             g_rate_percentage = growth_rate * 100
             graham_intrinsic = round((eps * (8.5 + (2 * g_rate_percentage)) * 4.4) / 7.10, 2)
-            st.markdown(f"> **Benjamin Graham Formula Benchmark:** Conservative intrinsic target at **₹{graham_intrinsic}** based on expected long-term earnings trajectory.")
+            st.markdown(f"> **Benjamin Graham Formula Benchmark:** Conservative intrinsic target at **₹{graham_intrinsic}** based on expected long-term growth trajectory.")
 
-    # ── TAB 5: AI QUANT RECOMMENDATIONS ───────────────────────
+    # ── TAB 5: AI SIGNAL GENERATOR ────────────────────────────
     with t5:
         st.markdown("## 🧠 Algorithmic AI Quantitative Engine Calls")
         st.markdown("---")
@@ -433,3 +429,6 @@ try:
         <div style='background:#1a1f2e; border:1px solid #30363d; padding:20px; border-radius:12px;'>
             <h3>System Recommendation Signal: <span style='color:{color_signal};'>{action_signal}</span></h3>
             <p style='margin-top:10px;'><b>Structural Matrix Live Evaluation:</b></p>
+            <ul>
+                <li>The asset is exhibiting a <b>{valuation_status}</b> environment with a historical Trailing P/E tracking at <b>{pe}x</b>.</li>
+                <li>Compounded performance over
