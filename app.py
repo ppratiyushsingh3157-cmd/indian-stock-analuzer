@@ -184,32 +184,25 @@ SENSEX = {
 }
 
 PEERS_MAP = {
-    # IT
     "TCS.NS":        ["INFY.NS","WIPRO.NS","HCLTECH.NS","TECHM.NS","LTIM.NS"],
     "INFY.NS":       ["TCS.NS","WIPRO.NS","HCLTECH.NS","TECHM.NS","LTIM.NS"],
     "WIPRO.NS":      ["TCS.NS","INFY.NS","HCLTECH.NS","TECHM.NS"],
     "HCLTECH.NS":    ["TCS.NS","INFY.NS","WIPRO.NS","TECHM.NS"],
-    # Banks
     "HDFCBANK.NS":   ["ICICIBANK.NS","AXISBANK.NS","KOTAKBANK.NS","SBIN.NS"],
     "ICICIBANK.NS":  ["HDFCBANK.NS","AXISBANK.NS","KOTAKBANK.NS","SBIN.NS"],
     "AXISBANK.NS":   ["HDFCBANK.NS","ICICIBANK.NS","KOTAKBANK.NS","SBIN.NS"],
     "SBIN.NS":       ["HDFCBANK.NS","ICICIBANK.NS","PNB.NS","BANKBARODA.NS"],
     "KOTAKBANK.NS":  ["HDFCBANK.NS","ICICIBANK.NS","AXISBANK.NS","INDUSINDBK.NS"],
-    # Auto
     "MARUTI.NS":     ["TATAMOTORS.NS","M&M.NS","BAJAJ-AUTO.NS","HEROMOTOCO.NS","EICHERMOT.NS"],
     "TATAMOTORS.NS": ["MARUTI.NS","M&M.NS","BAJAJ-AUTO.NS","HEROMOTOCO.NS"],
     "M&M.NS":        ["MARUTI.NS","TATAMOTORS.NS","BAJAJ-AUTO.NS"],
-    # Pharma
     "SUNPHARMA.NS":  ["DRREDDY.NS","CIPLA.NS","DIVISLAB.NS","APOLLOHOSP.NS"],
     "DRREDDY.NS":    ["SUNPHARMA.NS","CIPLA.NS","DIVISLAB.NS"],
     "CIPLA.NS":      ["SUNPHARMA.NS","DRREDDY.NS","DIVISLAB.NS"],
-    # Energy
     "RELIANCE.NS":   ["ONGC.NS","BPCL.NS","IOC.NS","ADANIENT.NS"],
     "ONGC.NS":       ["RELIANCE.NS","BPCL.NS","IOC.NS","COALINDIA.NS"],
-    # FMCG
     "HINDUNILVR.NS": ["ITC.NS","NESTLEIND.NS","BRITANNIA.NS","TATACONSUM.NS"],
     "ITC.NS":        ["HINDUNILVR.NS","NESTLEIND.NS","BRITANNIA.NS"],
-    # Electronics
     "DIXON.NS":      ["KAYNES.NS","AMBER.NS","PGEL.NS"],
     "KAYNES.NS":     ["DIXON.NS","AMBER.NS","PGEL.NS"],
 }
@@ -272,7 +265,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 if not analyze:
-    # Landing state
     c1, c2, c3, c4 = st.columns(4)
     c1.markdown("<div class='metric-card'><h3 style='color:#00d4ff'>50+</h3><p style='color:#8b949e'>Nifty 50 Stocks</p></div>", unsafe_allow_html=True)
     c2.markdown("<div class='metric-card'><h3 style='color:#00d4ff'>12+</h3><p style='color:#8b949e'>Bank Nifty Stocks</p></div>", unsafe_allow_html=True)
@@ -293,7 +285,6 @@ try:
         st.error("❌ Stock not found! Check the symbol.")
         st.stop()
 
-    # Price data
     try:
         fi       = stock.fast_info
         current  = round(fi.last_price, 2)
@@ -311,7 +302,6 @@ try:
     day_change_p = round((day_change / prev_close) * 100, 2)
     returns_1y   = round(((df_1y["Close"].iloc[-1] / df_1y["Close"].iloc[0]) - 1) * 100, 2)
 
-    # Fundamentals
     try:
         info          = stock.info
         pe            = round(info.get("trailingPE",       0) or 0, 1)
@@ -365,7 +355,6 @@ try:
     </div>
     """, unsafe_allow_html=True)
 
-    # ── Key Metrics Row ──────────────────────────────────────
     c1,c2,c3,c4,c5,c6 = st.columns(6)
     c1.metric("52W High",     f"₹{high_52w:,}")
     c2.metric("52W Low",      f"₹{low_52w:,}")
@@ -376,7 +365,6 @@ try:
 
     st.markdown("---")
 
-    # ── Tabs ─────────────────────────────────────────────────
     t1,t2,t3,t4,t5,t6,t7 = st.tabs([
         "📈 Charts",
         "📐 Fundamentals",
@@ -391,37 +379,31 @@ try:
     # TAB 1 — CHARTS
     # ════════════════════════════════════════════════
     with t1:
-        # Indicators
         df["MA20"]  = df["Close"].rolling(20).mean()
         df["MA50"]  = df["Close"].rolling(50).mean()
         df["MA200"] = df["Close"].rolling(200).mean()
 
-        # Bollinger Bands
         df["BB_mid"]   = df["Close"].rolling(20).mean()
         df["BB_std"]   = df["Close"].rolling(20).std()
         df["BB_upper"] = df["BB_mid"] + 2 * df["BB_std"]
         df["BB_lower"] = df["BB_mid"] - 2 * df["BB_std"]
 
-        # RSI
         delta_c = df["Close"].diff()
         gain    = delta_c.where(delta_c > 0, 0).rolling(14).mean()
         loss    = (-delta_c.where(delta_c < 0, 0)).rolling(14).mean()
-        df["RSI"] = 100 - (100 / (1 + (gain / loss)))
+        df["RSI"] = 100 - (100 / (1 + (gain / loss if loss.any() else 1)))
 
-        # MACD
         ema12 = df["Close"].ewm(span=12).mean()
         ema26 = df["Close"].ewm(span=26).mean()
         df["MACD"]        = ema12 - ema26
         df["MACD_signal"] = df["MACD"].ewm(span=9).mean()
         df["MACD_hist"]   = df["MACD"] - df["MACD_signal"]
 
-        rsi_val  = round(df["RSI"].iloc[-1],  1)
-        macd_val = round(df["MACD"].iloc[-1], 2)
+        rsi_val  = round(df["RSI"].iloc[-1],  1) if not df["RSI"].empty and not np.isnan(df["RSI"].iloc[-1]) else 50.0
+        macd_val = round(df["MACD"].iloc[-1], 2) if not df["MACD"].empty and not np.isnan(df["MACD"].iloc[-1]) else 0.0
 
-        # Build chart
         rows = 3 if show_volume else 2
         row_heights = [0.55, 0.25, 0.20] if show_volume else [0.65, 0.35]
-        specs = [[{"secondary_y": False}]] * rows
 
         fig = make_subplots(
             rows=rows, cols=1,
@@ -430,7 +412,6 @@ try:
             vertical_spacing=0.03
         )
 
-        # Candlestick
         fig.add_trace(go.Candlestick(
             x=df.index,
             open=df["Open"], high=df["High"],
@@ -445,26 +426,18 @@ try:
         fig.add_trace(go.Scatter(x=df.index, y=df["MA200"], name="200 MA", line=dict(color="orange", width=1.5)), row=1, col=1)
 
         if show_bollinger:
-            fig.add_trace(go.Scatter(x=df.index, y=df["BB_upper"], name="BB Upper",
-                line=dict(color="#ffffff40", width=1, dash="dot")), row=1, col=1)
-            fig.add_trace(go.Scatter(x=df.index, y=df["BB_lower"], name="BB Lower",
-                fill="tonexty", fillcolor="rgba(255,255,255,0.03)",
-                line=dict(color="#ffffff40", width=1, dash="dot")), row=1, col=1)
+            fig.add_trace(go.Scatter(x=df.index, y=df["BB_upper"], name="BB Upper", line=dict(color="#ffffff40", width=1, dash="dot")), row=1, col=1)
+            fig.add_trace(go.Scatter(x=df.index, y=df["BB_lower"], name="BB Lower", fill="tonexty", fillcolor="rgba(255,255,255,0.03)", line=dict(color="#ffffff40", width=1, dash="dot")), row=1, col=1)
 
-        # RSI
         rsi_color = "#da3633" if rsi_val > 70 else ("#26a641" if rsi_val < 30 else "#e3b341")
-        fig.add_trace(go.Scatter(x=df.index, y=df["RSI"], name="RSI",
-            line=dict(color=rsi_color, width=1.5)), row=2, col=1)
+        fig.add_trace(go.Scatter(x=df.index, y=df["RSI"], name="RSI", line=dict(color=rsi_color, width=1.5)), row=2, col=1)
         fig.add_hline(y=70, line_color="#da363360", line_dash="dash", row=2, col=1)
         fig.add_hline(y=30, line_color="#26a64160", line_dash="dash", row=2, col=1)
         fig.add_hline(y=50, line_color="#ffffff20", line_dash="dot",  row=2, col=1)
 
-        # Volume
         if show_volume:
-            vol_colors = ["#26a641" if df["Close"].iloc[i] >= df["Open"].iloc[i]
-                          else "#da3633" for i in range(len(df))]
-            fig.add_trace(go.Bar(x=df.index, y=df["Volume"], name="Volume",
-                marker_color=vol_colors, opacity=0.7), row=3, col=1)
+            vol_colors = ["#26a641" if df["Close"].iloc[i] >= df["Open"].iloc[i] else "#da3633" for i in range(len(df))]
+            fig.add_trace(go.Bar(x=df.index, y=df["Volume"], name="Volume", marker_color=vol_colors, opacity=0.7), row=3, col=1)
 
         fig.update_layout(
             template="plotly_dark",
@@ -481,27 +454,31 @@ try:
         fig.update_xaxes(gridcolor="#21262d")
         st.plotly_chart(fig, use_container_width=True)
 
-        # Indicator summary row
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("RSI (14)",  rsi_val,  help="<30 Oversold | >70 Overbought")
         c2.metric("MACD",      macd_val, help="Positive = Bullish momentum")
-        c3.metric("50 DMA",    f"₹{round(df['MA50'].iloc[-1],1)}")
-        c4.metric("200 DMA",   f"₹{round(df['MA200'].iloc[-1],1)}")
+        c3.metric("50 DMA",    f"₹{round(df['MA50'].iloc[-1],1)}" if not df["MA50"].empty else "N/A")
+        c4.metric("200 DMA",   f"₹{round(df['MA200'].iloc[-1],1)}" if not df["MA200"].empty else "N/A")
 
     # ════════════════════════════════════════════════
-    # TAB 2 — FUNDAMENTALS
+    # TAB 2 — FUNDAMENTALS (Error Fixed Here)
     # ════════════════════════════════════════════════
     with t2:
         st.markdown("### 📋 Company Overview")
         desc_text = str(description)
         st.write(desc_text[:700] + "..." if len(desc_text) > 700 else desc_text)
         if website:
-            st.markdown(f"🌐 [Official Website]({website})")
+            st.markdown(f"🔗 **Website:** [{website}]({website})")
 
-        st.markdown("---")
-        st.markdown("### 💰 Valuation Ratios")
-        c1,c2,c3,c4,c5,c6 = st.columns(6)
-        c1.metric("P/E (TTM)",     pe,       help="Price to Earnings")
-        c2.metric("Forward P/E",   fwd_pe,   help="Based on next year estimates")
-        c3.metric("P/B",           pb,       help="Price to Book Value")
-        c4.metric("PEG Ratio",     peg,      help="P/E to Growth — <1 und
+        st.markdown("<div class='section-header'><h3>Valuation Metrics</h3></div>", unsafe_allow_html=True)
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Trailing P/E", pe if pe else "N/A")
+        c2.metric("Forward P/E", fwd_pe if fwd_pe else "N/A")
+        c3.metric("Price to Book (P/B)", pb if pb else "N/A")
+        # ── FIXED LINE 507 BELOW ───────────────────────────────────────────
+        c4.metric("PEG Ratio", peg, help="P/E to Growth - Values < 1 indicate undervaluation")
+
+        st.markdown("<div class='section-header'><h3>Profitability & Margins</h3></div>", unsafe_allow_html=True)
+        c5, c6, c7, c8 = st.columns(4)
+        c5.metric("Return on Equity (ROE)", f"{roe}%" if roe else "N/A")
+        c6.metric("Return on Assets (
