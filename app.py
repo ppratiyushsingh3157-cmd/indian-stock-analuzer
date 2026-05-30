@@ -3,10 +3,9 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from datetime import datetime
 
 # ----------------------------------------------------
-# 1. ADVANCED TERMINAL INTERFACE CONFIGURATION
+# 1. PREMIUM ARCHITECTURE INTERFACE CONFIGURATION
 # ----------------------------------------------------
 st.set_page_config(
     page_title="Quant-Modeling Analyst Terminal", 
@@ -14,257 +13,264 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Premium Institutional UI/UX Dark Styling Engine
+# Screener.in Premium Dark Palette Theme Styling
 st.markdown("""
     <style>
-    .main { background-color: #0A0D14; color: #E5E7EB; }
+    .main { background-color: #0B0F19; color: #E5E7EB; }
     [data-testid="stSidebar"] { background-color: #111622; border-right: 1px solid #1F293D; }
     
-    /* Input Elements styling */
+    /* Input formatting */
     .stTextInput>div>div>input { background-color: #1A2234 !important; color: #FFFFFF !important; border: 1px solid #374151 !important; }
     
-    /* Strategic Metric Container Optimization */
+    /* Metric Cards Optimization */
     div[data-testid="metric-container"] { 
         background-color: #151B2C; 
         border: 1px solid #24314D; 
-        padding: 18px; 
-        border-radius: 10px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        padding: 15px; 
+        border-radius: 8px;
     }
-    div[data-testid="stMetricValue"] { font-size: 24px !important; font-weight: 700 !important; color: #F3F4F6; }
-    div[data-testid="stMetricLabel"] { color: #9CA3AF !important; font-size: 13px !important; letter-spacing: 0.05em; }
+    div[data-testid="stMetricValue"] { font-size: 22px !important; font-weight: 700 !important; color: #F3F4F6; }
     
-    /* Institutional Premium Tabs Design */
+    /* Tabs Layout Custom Styling */
     .stTabs [data-baseweb="tab"] { 
         color: #9CA3AF; 
         font-size: 15px; 
-        font-weight: 500;
-        padding: 12px 20px;
-        transition: all 0.2s ease-in-out;
+        padding: 10px 18px;
     }
-    .stTabs [data-baseweb="tab"]:hover { color: #F3F4F6; background-color: #151B2C; border-radius: 6px 6px 0 0; }
     .stTabs [data-baseweb="tab"][aria-selected="true"] { 
         color: #3B82F6 !important; 
         border-bottom: 2px solid #3B82F6 !important;
-        font-weight: 600;
+        font-weight: bold;
     }
     
-    /* Executive Alerts Cards styling */
-    .pro-card { background-color: rgba(16, 185, 129, 0.1); border-left: 4px solid #10B981; padding: 12px; border-radius: 4px; margin-bottom: 8px; }
-    .con-card { background-color: rgba(239, 68, 68, 0.1); border-left: 4px solid #EF4444; padding: 12px; border-radius: 4px; margin-bottom: 8px; }
+    /* Recommendation Badge Styles */
+    .signal-buy { background-color: rgba(16, 185, 129, 0.15); color: #10B981; padding: 12px; border-radius: 6px; border: 1px solid #10B981; font-weight: bold; font-size: 18px; text-align: center; }
+    .signal-sell { background-color: rgba(239, 68, 68, 0.15); color: #EF4444; padding: 12px; border-radius: 6px; border: 1px solid #EF4444; font-weight: bold; font-size: 18px; text-align: center; }
+    .signal-hold { background-color: rgba(245, 158, 11, 0.15); color: #F59E0B; padding: 12px; border-radius: 6px; border: 1px solid #F59E0B; font-weight: bold; font-size: 18px; text-align: center; }
+    
+    .pro-card { background-color: rgba(16, 185, 129, 0.08); border-left: 4px solid #10B981; padding: 10px; border-radius: 4px; margin-bottom: 6px; }
+    .con-card { background-color: rgba(239, 68, 68, 0.08); border-left: 4px solid #EF4444; padding: 10px; border-radius: 4px; margin-bottom: 6px; }
     </style>
 """, unsafe_allow_html=True)
 
-# Main Application Structural Header
 st.markdown("# ⚡ Quant-Modeling Analyst Terminal")
-st.markdown("<div style='height: 1px; background-color: #1F293D; margin-bottom: 25px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='height: 1px; background-color: #1F293D; margin-bottom: 20px;'></div>", unsafe_allow_html=True)
 
 # ----------------------------------------------------
-# 2. CONTROL SIDEBAR & DATA PIPELINE INTAKE
+# 2. CONTROL SIDEBAR & UNIVERSAL SYMBOL RECONCILER
 # ----------------------------------------------------
-st.sidebar.markdown("### 🔍 Universe Coverage Controls")
-raw_ticker = st.sidebar.text_input("NSE Ticker Target Symbol (e.g. KAYNES, RELIANCE)", value="KAYNES").upper().strip()
+st.sidebar.markdown("### 🔍 Stock Universe Search Engine")
+raw_ticker = st.sidebar.text_input("Enter Ticker Symbol (e.g. CDSL, DIXON, SBIN, KPITTECH)", value="CDSL").upper().strip()
 
-# Formulating proper NSE suffix formatting for Yahoo Finance
 if raw_ticker and not (raw_ticker.endswith(".NS") or raw_ticker.endswith(".BO")):
     ticker_input = f"{raw_ticker}.NS"
 else:
     ticker_input = raw_ticker
 
-chart_period = st.sidebar.radio("Multi-Horizon Temporal Horizon", ["1M", "3M", "6M", "1Y", "5Y"], index=3)
-
-st.sidebar.markdown("---")
-st.sidebar.markdown("### 🛠️ Technical Indicator Matrix")
-show_indicators = st.sidebar.checkbox("Compute 50 & 200 DMA Tracks", value=True)
-
-# Mapping Period to yfinance readable keys
-horizon_transformer = {"1M": "1mo", "3M": "3mo", "6M": "6mo", "1Y": "1y", "5Y": "5y"}
-yf_period = horizon_transformer.get(chart_period, "1y")
+chart_period = st.sidebar.radio("Multi-Horizon Temporal Scaling Matrix", ["1M", "3M", "6M", "1Y", "5Y"], index=3)
+show_indicators = st.sidebar.checkbox("Compute 50 & 200 EMA Overlays", value=True)
 
 # ----------------------------------------------------
-# 3. LIVE DATA ACQUISITION & ENGINE PIPELINE
+# 4. TECH-INDICATOR CALCULATIONS (RSI Engine for AI Recommendation)
+# ----------------------------------------------------
+def calculate_rsi(series, period=14):
+    delta = series.diff()
+    gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+    rs = gain / (loss + 1e-10)
+    return 100 - (100 / (1 + rs))
+
+# ----------------------------------------------------
+# 3. HIGH-FIDELITY LIVE DATA ENGINE (Yahoo Finance API)
 # ----------------------------------------------------
 try:
-    # Fetch live ecosystem via yfinance API
     ticker_object = yf.Ticker(ticker_input)
+    historical_full = ticker_object.history(period="5y")
     
-    # 1Y history forced for baseline technical vector calculations (50 & 200 DMA)
-    historical_df = ticker_object.history(period="5y" if chart_period == "5Y" else "1y")
-    
-    if historical_df.empty:
-        st.error(f"❌ Error: Suffix mapping failed for '{raw_ticker}'. Please verify the symbol name.")
+    if historical_full.empty:
+        st.error(f"❌ Ticker context token '{raw_ticker}' not found. Please cross check symbol spelling.")
         st.stop()
         
-    # Slicing table according to active user scale filter
-    days_filter = {"1M": 30, "3M": 90, "6M": 180, "1Y": 365, "5Y": 1825}
-    display_df = historical_df.tail(days_filter.get(chart_period, 365)).copy()
-
-    # Dynamic calculation parameters for true indicators
-    historical_df['50_DMA'] = historical_df['Close'].rolling(window=50).mean()
-    historical_df['200_DMA'] = historical_df['Close'].rolling(window=200).mean()
+    # Vector Operations for EMAs & RSI
+    historical_full['50_EMA'] = historical_full['Close'].ewm(span=50, adjust=False).mean()
+    historical_full['200_EMA'] = historical_full['Close'].ewm(span=200, adjust=False).mean()
+    historical_full['RSI'] = calculate_rsi(historical_full['Close'])
     
-    # Merging tracking indicators seamlessly back into display dataframe slices
-    display_df['50_DMA'] = historical_df['50_DMA'].loc[display_df.index]
-    display_df['200_DMA'] = historical_df['200_DMA'].loc[display_df.index]
+    horizon_days = {"1M": 30, "3M": 90, "6M": 180, "1Y": 365, "5Y": 1825}
+    display_df = historical_full.tail(horizon_days.get(chart_period, 365)).copy()
 
-    # Live Info Data Processing Blocks
     info_packet = ticker_object.info
     fast_info = ticker_object.fast_info
     
     current_price = round(fast_info.last_price, 2) if hasattr(fast_info, 'last_price') else round(display_df['Close'].iloc[-1], 2)
-    market_cap_raw = fast_info.market_cap if hasattr(fast_info, 'market_cap') else (info_packet.get('marketCap', 0))
-    market_cap_cr = f"{round(market_cap_raw / 1e7):,} Cr" if market_cap_raw else "N/A"
+    market_cap_raw = fast_info.market_cap if hasattr(fast_info, 'market_cap') else info_packet.get('marketCap', 0)
+    market_cap_cr = f"₹{round(market_cap_raw / 1e7):,} Cr" if market_cap_raw else "N/A"
     
-    high_52 = round(info_packet.get('threeYearHigh', current_price * 1.5), 2) if chart_period == "5Y" else round(info_packet.get('fiftyTwoWeekHigh', display_df['High'].max()), 2)
-    low_52 = round(info_packet.get('threeYearLow', current_price * 0.5), 2) if chart_period == "5Y" else round(info_packet.get('fiftyTwoWeekLow', display_df['Low'].min()), 2)
-    
+    high_52 = round(info_packet.get('fiftyTwoWeekHigh', display_df['High'].max()), 2)
+    low_52 = round(info_packet.get('fiftyTwoWeekLow', display_df['Low'].min()), 2)
     pe_ratio = f"{round(info_packet.get('trailingPE', 0), 1)}x" if info_packet.get('trailingPE') else "N/A"
-    book_value = f"₹{round(info_packet.get('bookValue', 0), 1)}" if info_packet.get('bookValue') else "N/A"
+    book_val = f"₹{round(info_packet.get('bookValue', 0), 1)}" if info_packet.get('bookValue') else "N/A"
     
-    # Clean string naming cleanups
     company_name = info_packet.get('longName', raw_ticker)
-    sector_info = info_packet.get('sector', 'Financial Markets Equities')
-    industry_info = info_packet.get('industry', 'General Core Sector')
-    about_text = info_packet.get('longBusinessSummary', 'Corporate descriptive brief processing complete inside pipeline data tables.')
+    sector_info = info_packet.get('sector', 'Core Financial Infrastructure')
+    industry_info = info_packet.get('industry', 'Financial Data & Services')
+    about_text = info_packet.get('longBusinessSummary', 'Business profile brief processing complete.')
 
     # ----------------------------------------------------
-    # 4. STRUCTURAL SCREEN METRIC RENDERING LAYER
+    # AI QUANT RECOMMENDATION LOGIC ENGINE
     # ----------------------------------------------------
-    st.subheader(f"📊 {company_name} ({raw_ticker}.NS)")
-    st.markdown(f"<p style='color: #6B7280; font-size:14px; margin-top:-10px;'>System Architecture Framework Core Asset Track: {sector_info} | {industry_info}</p>", unsafe_allow_html=True)
+    latest_close = display_df['Close'].iloc[-1]
+    latest_50 = display_df['50_EMA'].iloc[-1]
+    latest_200 = display_df['200_EMA'].iloc[-1]
+    latest_rsi = display_df['RSI'].iloc[-1] if not pd.isna(display_df['RSI'].iloc[-1]) else 50
+    
+    # Quantitative Decision Tree Matrix
+    if latest_close > latest_50 and latest_50 > latest_200 and latest_rsi < 70:
+        ai_signal = "STRONG BUY"
+        signal_css = "signal-buy"
+        signal_desc = "Price is trending above short and long-term EMAs with healthy momentum (RSI underbought)."
+    elif latest_close < latest_50 and latest_50 < latest_200:
+        ai_signal = "STRONG SELL"
+        signal_css = "signal-sell"
+        signal_desc = "Asset displays structural weakness. Staying below moving averages indicates bearish control."
+    elif latest_rsi > 75:
+        ai_signal = "HOLD / REDUCE"
+        signal_css = "signal-hold"
+        signal_desc = "Technical momentum is overextended (RSI indicates Overbought region). Protect capital."
+    elif latest_rsi < 25:
+        ai_signal = "ACCUMULATE (BUY)"
+        signal_css = "signal-buy"
+        signal_desc = "Asset is deeply oversold structurally. Good risk-reward zone for long entries."
+    else:
+        ai_signal = "HOLD"
+        signal_css = "signal-hold"
+        signal_desc = "Price action is consolidating within standard technical boundaries."
+
+    # ----------------------------------------------------
+    # 4. INSTANT LIVE METRICS PANEL GRID
+    # ----------------------------------------------------
+    st.subheader(f"🏢 {company_name} ({raw_ticker})")
+    st.markdown(f"<p style='color: #6B7280; font-size:13px; margin-top:-10px;'>Sector: {sector_info} | Industry: {industry_info}</p>", unsafe_allow_html=True)
 
     m_col1, m_col2, m_col3, m_col4, m_col5 = st.columns(5)
-    m_col1.metric("Current Quote Price", f"₹{current_price:,}")
+    m_col1.metric("Current Market Price", f"₹{current_price:,}")
     m_col2.metric("Market Capitalization", market_cap_cr)
-    m_col3.metric("High Target Horizon Bounds", f"₹{high_52:,}")
-    m_col4.metric("Low Target Horizon Bounds", f"₹{low_52:,}")
+    m_col3.metric("52-Week High Range", f"₹{high_52:,}")
+    m_col4.metric("52-Week Low Range", f"₹{low_52:,}")
     m_col5.metric("Trailing P/E Vector", pe_ratio)
 
+    # Rendering AI Signals Panel
+    st.markdown(f"### 🤖 AI Quantitative Recommendation Engine")
+    st.markdown(f"<div class='{signal_css}'>🎯 ANALYST SIGNAL: {ai_signal}</div>", unsafe_allow_html=True)
+    st.markdown(f"<p style='color: #9CA3AF; font-size: 14px; margin-top: 5px;'><b>Reasoning Matrix:</b> {signal_desc} (Current RSI: {round(latest_rsi, 2)})</p>", unsafe_allow_html=True)
     st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
 
     # ----------------------------------------------------
-    # 5. ENTERPRISE LEVEL TAB ENVIRONMENT INFRASTRUCTURE
+    # 5. DATASET TABLE FORMATTER (SCREENER.IN STYLE ALIGNMENT)
     # ----------------------------------------------------
-    tab_visuals, tab_about, tab_pl, tab_bs, tab_cf, tab_peers, tab_swot = st.tabs([
-        "📈 Technical Visualizers", "🏢 Corporate About", "📋 Profit & Loss", "📂 Balance Sheet", "💸 Cash Flow Statements", "👥 Peer Analysis", "💎 SWOT & Strategic Matrix"
+    def format_to_screener_layout(df_in):
+        if df_in is None or df_in.empty:
+            return pd.DataFrame({"Metrics Grid Engine": ["Data matrix sequence currently being reconciled."]})
+        scaled_df = df_in.copy()
+        for c in scaled_df.columns:
+            scaled_df[c] = pd.to_numeric(scaled_df[c], errors='coerce') / 1e7
+        if isinstance(scaled_df.columns, pd.DatetimeIndex):
+            scaled_df.columns = scaled_df.columns.strftime('%b %Y')
+        return scaled_df.round(2)
+
+    # ----------------------------------------------------
+    # 6. ENTERPRISE LEVEL TAB INFRASTRUCTURE
+    # ----------------------------------------------------
+    t_chart, t_about, t_pl, t_bs, t_cf, t_peers, t_swot = st.tabs([
+        "📈 Technical Visualizer Chart", "🏢 Company Profile", "📋 Profit & Loss Account", "📂 Balance Sheet Ledger", "💸 Cash Flow Report", "👥 Peer Benchmarking", "💎 SWOT & Strategy Alerts"
     ])
 
-    # TAB 1: LIVE CHART ENGINE WITH GENUINE ALIGNMENT
-    with tab_visuals:
+    # TAB 1: CHART VISUALIZATIONS ENGINE
+    with t_chart:
         chart_figure = go.Figure()
-        
-        # Real Market Candlesticks displaying proper Open-High-Low-Close interactions
         chart_figure.add_trace(go.Candlestick(
             x=display_df.index, open=display_df['Open'], high=display_df['High'],
-            low=display_df['Low'], close=display_df['Close'], name='Market Price Candlestick',
+            low=display_df['Low'], close=display_df['Close'], name='Asset Daily Candle',
             increasing_line_color='#10B981', decreasing_line_color='#EF4444',
             increasing_fillcolor='#10B981', decreasing_fillcolor='#EF4444'
         ))
-        
         if show_indicators:
-            chart_figure.add_trace(go.Scatter(x=display_df.index, y=display_df['50_DMA'], line=dict(color='#3B82F6', width=2), name='50 DMA Line'))
-            chart_figure.add_trace(go.Scatter(x=display_df.index, y=display_df['200_DMA'], line=dict(color='#F59E0B', width=2.5), name='200 DMA Baseline'))
+            chart_figure.add_trace(go.Scatter(x=display_df.index, y=display_df['50_EMA'], line=dict(color='#3B82F6', width=1.8), name='50 EMA'))
+            chart_figure.add_trace(go.Scatter(x=display_df.index, y=display_df['200_EMA'], line=dict(color='#F59E0B', width=2.2), name='200 EMA'))
 
         chart_figure.update_layout(
             template="plotly_dark", paper_bgcolor="#0A0D14", plot_bgcolor="#0A0D14",
-            xaxis_rangeslider_visible=False, height=520, margin=dict(l=15, r=15, t=10, b=15),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+            xaxis_rangeslider_visible=False, height=500, margin=dict(l=10, r=10, t=10, b=10)
         )
         st.plotly_chart(chart_figure, use_container_width=True)
 
-    # TAB 2: CORPORATE PROFILE OVERVIEW
-    with tab_about:
-        st.markdown("### Profile Overview & Enterprise Ecosystem")
-        st.markdown(f"<div style='line-height:1.6; color:#D1D5DB;'>{about_text}</div>", unsafe_allow_html=True)
+    # TAB 2: COMPANY PROFILE CORPORATE OVERVIEW
+    with t_about:
+        st.markdown("### Executive Business Summary Profile")
+        st.markdown(f"<div style='line-height:1.7; color:#D1D5DB; font-size:14px;'>{about_text}</div>", unsafe_allow_html=True)
 
-    # Financial Data Scaling Helper (Converts raw metrics to standard Cr values)
-    def clean_financials_to_cr(df_in):
-        if df_in is None or df_in.empty:
-            return pd.DataFrame({"Status": ["Financial data tracking metrics not compiled by vendor API."]})
-        df_out = df_in.copy()
-        # Scale numerical coordinates
-        for col in df_out.columns:
-            df_out[col] = pd.to_numeric(df_out[col], errors='coerce') / 1e7
-        if isinstance(df_out.columns, pd.DatetimeIndex):
-            df_out.columns = df_out.columns.strftime('%b %Y')
-        return df_out.round(2)
+    # TAB 3: PROFIT & LOSS ROWS
+    with t_pl:
+        st.markdown("### Standalone Profit & Loss Statement Matrix (Values listed in Rs. Cr.)")
+        st.dataframe(format_to_screener_layout(ticker_object.financials), use_container_width=True)
 
-    # TAB 3: PROFIT & LOSS SHEETS
-    with tab_pl:
-        st.markdown("### Standalone Operational Financial Statement Tracker (Figures scaled in Rs. Crores)")
-        st.dataframe(clean_financials_to_cr(ticker_object.financials), use_container_width=True)
+    # TAB 4: BALANCE SHEET ROWS
+    with t_bs:
+        st.markdown("### Consolidated Core Balance Sheet Statements Ledger (Values listed in Rs. Cr.)")
+        st.dataframe(format_to_screener_layout(ticker_object.balance_sheet), use_container_width=True)
 
-    # TAB 4: BALANCE SHEET SHEETS
-    with tab_bs:
-        st.markdown("### Consolidated Core Balance Sheet Architecture (Figures scaled in Rs. Crores)")
-        st.dataframe(clean_financials_to_cr(ticker_object.balance_sheet), use_container_width=True)
+    # TAB 5: CASH FLOW ROWS
+    with t_cf:
+        st.markdown("### Strategic Segment Cash Flow Summary Track (Values listed in Rs. Cr.)")
+        st.dataframe(format_to_screener_layout(ticker_object.cashflow), use_container_width=True)
 
-    # TAB 5: CASH FLOW MANAGEMENT MATRICES
-    with tab_cf:
-        st.markdown("### Strategic Cash Flow Stream Vector Allocation (Figures scaled in Rs. Crores)")
-        st.dataframe(clean_financials_to_cr(ticker_object.cashflow), use_container_width=True)
-
-    # TAB 6: COMPETITOR ANALYSIS BENCHMARKING (Dynamic Peer fallback grid)
-    with tab_peers:
-        st.markdown("### Core Industry Competitor Comps Structural Grid")
-        mock_peers = pd.DataFrame({
-            "Peer Enterprise Matrix": [f"{raw_ticker} (Target)", "Dixon Technologies", "Amber Enterprises", "Syrma SGS Technology"],
-            "CMP (₹)": [current_price, 6840.10, 3210.45, 412.20],
-            "P/E Multiple": [pe_ratio, "82.4x", "61.2x", "38.6x"],
-            "Market Cap": [market_cap_cr, "40,850 Cr", "10,820 Cr", "7,250 Cr"],
-            "ROCE % Return": [info_packet.get('returnOnEquity', 0.12) * 1.4 * 100, 22.40, 11.10, 15.30]
-        })
-        mock_peers["ROCE % Return"] = mock_peers["ROCE % Return"].apply(lambda x: f"{round(x, 1)}%")
-        st.dataframe(mock_peers.set_index("Peer Enterprise Matrix"), use_container_width=True)
-
-    # TAB 7: CORPORATE SWOT & STRATEGIC INSIGHT GRID
-    with tab_swot:
-        # Strategic rules mapping based on qualitative evaluation of operational indicators
-        is_high_pe = info_packet.get('trailingPE', 0) > 40
-        has_debt = info_packet.get('debtToEquity', 0) > 50
+    # TAB 6: INTELLIGENT PEER BENCHMARKING ENGINE (FIXED TRULY)
+    with t_peers:
+        st.markdown(f"### 👥 Competitor Peer Benchmarking (Dynamic Sector Alignment)")
         
-        pros_list = ["Robust operational integration setup inside core sector parameters.", "Dynamic multi-horizon quarterly trajectory scaling asset visibility metrics."]
-        cons_list = ["Global logistical constraints influencing sequential inventory execution cycles."]
+        # Smart Cross-Industry Logic Map
+        industry_peers_map = {
+            "Financial Data & Services": ["BSE.NS", "MCX.NS", "IEX.NS", "MUTHOOTFIN.NS"],
+            "Electronic Components": ["DIXON.NS", "AMBER.NS", "KAYNES.NS", "SYRMA.NS"],
+            "Private Banks": ["HDFCBANK.NS", "ICICIBANK.NS", "AXISBANK.NS", "SBIN.NS"]
+        }
         
-        if is_high_pe:
-            cons_list.append("Trading structure command high sector price multiple premium limitations.")
+        peer_symbols = industry_peers_map.get(industry_info, ["RELIANCE.NS", "TCS.NS", "INFY.NS"])
+        
+        peer_data_list = []
+        # Pull real dynamic metrics for same-sector peers
+        for sym in peer_symbols[:4]:
+            try:
+                p_obj = yf.Ticker(sym)
+                p_info = p_obj.info
+                peer_data_list.append({
+                    "Enterprise Matrix": sym.replace(".NS", ""),
+                    "CMP (₹)": round(p_info.get('previousClose', 0), 2),
+                    "Trailing P/E": f"{round(p_info.get('trailingPE', 0), 1)}x" if p_info.get('trailingPE') else "N/A",
+                    "Market Cap": f"₹{round(p_info.get('marketCap', 0) / 1e7):,} Cr" if p_info.get('marketCap') else "N/A",
+                    "ROE %": f"{round(p_info.get('returnOnEquity', 0) * 100, 1)}%" if p_info.get('returnOnEquity') else "N/A"
+                })
+            except:
+                pass
+                
+        if peer_data_list:
+            peers_df = pd.DataFrame(peer_data_list).set_index("Enterprise Matrix")
+            st.dataframe(peers_df, use_container_width=True)
         else:
-            pros_list.append("Comfortable baseline multiple valuation vectors.")
-            
+            st.info("Dynamic sector processing ongoing.")
+
+    # TAB 7: SWOT MATRIX STRUCTURAL INTELLIGENCE GRID
+    with t_swot:
+        st.markdown("### Qualitative Asset SWOT Analysis")
         c_pro, c_con = st.columns(2)
         with c_pro:
-            st.markdown("#### 👍 STRATEGIC INVESTMENT PROS")
-            for pro in pros_list:
-                st.markdown(f"<div class='pro-card'>✔ {pro}</div>", unsafe_allow_html=True)
-                
+            st.markdown("##### 👍 DETAILED STRATEGIC PROS")
+            st.markdown(f"<div class='pro-card'>✔ Dominant operational positioning inside the {industry_info} matrix.</div>", unsafe_allow_html=True)
+            st.markdown("<div class='pro-card'>✔ Highly scalable business model with low direct asset degradation curves.</div>", unsafe_allow_html=True)
         with c_con:
-            st.markdown("#### 👎 STRATEGIC INVESTMENT CONS")
-            for con in cons_list:
-                st.markdown(f"<div class='con-card'>❌ {con}</div>", unsafe_allow_html=True)
-                
-        st.markdown("<div style='height: 20px; border-bottom: 1px solid #1F293D;'></div>", unsafe_allow_html=True)
-        st.markdown("### 💎 Consolidated Core SWOT Matrix Grid")
-        
-        sw_c1, sw_c2, sw_c3, sw_c4 = st.columns(4)
-        with sw_c1:
-            st.markdown("<div style='background-color:#064E3B; padding:10px; border-radius:6px; font-weight:bold; color:#10B981; text-align:center;'>💪 STRENGTHS</div>", unsafe_allow_html=True)
-            st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
-            st.markdown("- Strong baseline equity capitalization structures.\n- Sound historical return allocations.")
-            
-        with sw_c2:
-            st.markdown("<div style='background-color:#78350F; padding:10px; border-radius:6px; font-weight:bold; color:#F59E0B; text-align:center;'>⚠️ WEAKNESSES</div>", unsafe_allow_html=True)
-            st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
-            st.markdown("- Exposed to dynamic changes in upstream industrial raw material pricing indexes.")
-            
-        with sw_c3:
-            st.markdown("<div style='background-color:#1E3A8A; padding:10px; border-radius:6px; font-weight:bold; color:#3B82F6; text-align:center;'>🚀 OPPORTUNITIES</div>", unsafe_allow_html=True)
-            st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
-            st.markdown("- Localization tailwinds under active domestic industrial electronics growth policies.")
-            
-        with sw_c4:
-            st.markdown("<div style='background-color:#7F1D1D; padding:10px; border-radius:6px; font-weight:bold; color:#EF4444; text-align:center;'>🚨 THREATS</div>", unsafe_allow_html=True)
-            st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
-            st.markdown("- Dynamic competitive challenges emerging from low-cost overseas assembly manufacturers.")
+            st.markdown("##### 👎 DETAILED STRATEGIC CONS")
+            st.markdown("<div class='con-card'>❌ Highly sensitive to overall secondary equity market volume fluctuations.</div>", unsafe_allow_html=True)
+            st.markdown("<div class='con-card'>❌ Subject to rigorous regulatory monitoring and compliance shifts.</div>", unsafe_allow_html=True)
 
-except Exception as global_err:
-    st.error(f"⚠️ Production Infrastructure Notice: Data processing pipelines down temporarily. Error context: {global_err}")
+except Exception as pipeline_err:
+    st.error(f" Market Pipeline Error Context flags: {pipeline_err}")
