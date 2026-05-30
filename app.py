@@ -11,7 +11,7 @@ ticker = st.text_input("Enter NSE Stock Symbol (e.g. DIXON.NS, RELIANCE.NS, TCS.
 
 if ticker:
     stock = yf.Ticker(ticker)
-    df = stock.history(period="5y")
+    df = stock.history(period="2y")
     info = stock.info
 
     col1, col2, col3, col4 = st.columns(4)
