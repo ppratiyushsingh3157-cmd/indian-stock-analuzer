@@ -154,18 +154,30 @@ if st.button("🚀 Analyze Stock", type="primary"):
             except:
                 st.warning("Cash flow not available")
 
-        with tab4:
+       with tab4:
+     try:
+        st.markdown("### 📊 Shareholding Pattern")
+        major = stock.major_holders
+        if major is not None and not major.empty:
+            labels = ['Insiders %', 'Institutions %', 'Institutions Float %', 'Institutions Count']
+            values = major[0].tolist()
+            col1, col2, col3, col4 = st.columns(4)
             try:
-                holders = stock.institutional_holders
-                if holders is not None and not holders.empty:
-                    st.markdown("### 🏦 Institutional Investors")
-                    st.dataframe(holders, use_container_width=True)
-                major = stock.major_holders
-                if major is not None and not major.empty:
-                    st.markdown("### 📊 Shareholding Pattern")
-                    st.dataframe(major, use_container_width=True)
+                col1.metric("👤 Promoters/Insiders", f"{round(float(values[0])*100,2)}%")
+                col2.metric("🏦 FIIs + DIIs", f"{round(float(values[1])*100,2)}%")
+                col3.metric("📊 Float Held by Inst.", f"{round(float(values[2])*100,2)}%")
+                col4.metric("🏢 No. of Institutions", int(float(values[3])))
             except:
-                st.warning("Investor data not available")
+                st.dataframe(major, use_container_width=True)
+          
+        st.markdown("### 🏦 Top Institutional Holders")
+        holders = stock.institutional_holders
+        if holders is not None and not holders.empty:
+            st.dataframe(holders, use_container_width=True)
+        else:
+            st.warning("Institutional data not available")
+    except:
+        st.warning("Investor data not available")
 
         st.markdown("---")
         st.markdown("## 🔍 AI-Powered SWOT Analysis")
