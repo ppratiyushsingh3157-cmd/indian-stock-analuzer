@@ -13,7 +13,7 @@ st.markdown("---")
 @st.cache_data(ttl=3600)
 def get_stock_data(ticker):
     stock = yf.Ticker(ticker)
-    df = stock.history(period="1y", auto_adjust=True)
+    @st.cache_data(ttl=3600)
     info = stock.fast_info
     return stock, df, info
 
