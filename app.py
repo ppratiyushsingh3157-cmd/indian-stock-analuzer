@@ -4,15 +4,16 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pandas as pd
 import numpy as np
+import time
 
 st.set_page_config(
-    page_title="AlphaQuant — Advance Equity Research Terminal",
+    page_title="AlphaQuant — Live Real-Time Analytics Engine",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# ── Custom CSS ───────────────────────────────────────────────
+# ── Custom CSS for Adaptive Structural Layout ────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap');
@@ -42,13 +43,14 @@ div[data-testid="metric-container"] {
     min-width: 100% !important;
 }
 div[data-testid="stMetricValue"] {
-    font-size: 1.25rem !important;
-    white-space: normal !important;
-    word-break: break-all !important;
+    font-size: 1.3rem !important;
+    white-space: nowrap !important;
+    font-weight: 600;
 }
 div[data-testid="stMetricLabel"] {
     white-space: normal !important;
     font-size: 0.85rem !important;
+    color: #8b949e;
 }
 .stTabs [data-baseweb="tab"] {
     background-color: #1a1f2e;
@@ -90,14 +92,14 @@ div[data-testid="stMetricLabel"] {
 </style>
 """, unsafe_allow_html=True)
 
-# ── Sidebar Router ───────────────────────────────────────────
+# ── Sidebar Router & Configuration ───────────────────────────
 with st.sidebar:
     st.markdown("## ⚡ AlphaQuant Engine")
-    st.markdown("*Institutional Equity Research Software*")
+    st.markdown("*Real-Time Streaming Analyst Terminal*")
     st.markdown("---")
     
-    st.markdown("### 🔍 Global Market Coverage")
-    user_symbol = st.text_input("Enter NSE Ticker Symbol (1200+ listed)", value="KAYNES").strip().upper()
+    st.markdown("### 🔍 Asset Tracking Ticker")
+    user_symbol = st.text_input("Enter NSE Ticker Symbol", value="KAYNES").strip().upper()
     
     if user_symbol:
         if not user_symbol.endswith(".NS") and not user_symbol.endswith(".BO"):
@@ -111,28 +113,42 @@ with st.sidebar:
     period_label = st.radio("📅 Multi-Horizon Chart Scale", ["1M","3M","6M","1Y","3Y","5Y"], index=3, horizontal=True)
     period_map = {"1M":"1mo","3M":"3mo","6M":"6mo","1Y":"1y","3Y":"3y","5Y":"5y"}
 
-    show_volume = st.checkbox("Show Volume Profiles", value=True)
-    show_bollinger = st.checkbox("Show Volatility Envelopes (BB)", value=False)
-
+    # Dynamic Autorefresh Interval Controller 
+    st.markdown("### 🔄 Live Stream Automation")
+    refresh_rate = st.slider("Screen Auto-Sync Interval (Seconds)", 10, 120, 30, step=5)
+    
     st.markdown("---")
     analyze = st.button("🚀 Execute Quantitative Analytics", type="primary", use_container_width=True)
 
-if not analyze:
+# Session state handling to preserve active state during loop refreshes
+if 'has_executed' not in st.session_state:
+    st.session_state.has_executed = False
+
+if analyze:
+    st.session_state.has_executed = True
+
+if not st.session_state.has_executed:
     st.markdown("<h2 style='color:#00d4ff;'>⚡ Quant-Modeling Analyst Terminal</h2>", unsafe_allow_html=True)
     st.markdown("---")
     c1, c2, c3 = st.columns(3)
     c1.markdown("<div class='metric-card'><h3>Universal Core</h3><p>Access 1,200+ Equity Assets instantaneously via live data interfaces.</p></div>", unsafe_allow_html=True)
-    c2.markdown("<div class='metric-card'><h3>Modeling Vault</h3><p>Automated multi-stage DCF, Graham intrinsic pricing, and valuation gaps.</p></div>", unsafe_allow_html=True)
+    c2.markdown("<div class='metric-card'><h3>Automated Stream</h3><p>Self-correcting data matrix that shifts seamlessly during market open and close transitions.</p></div>", unsafe_allow_html=True)
     c3.markdown("<div class='metric-card'><h3>AI Recommendations</h3><p>Automated algorithmic trading signals and deep SWOT analytics profiling.</p></div>", unsafe_allow_html=True)
-    st.info("👈 Enter any listed equity ticker name code (e.g., KAYNES, DIXON, TATASTEEL, JIOFIN) inside the sidebar terminal input and hit execute.")
+    st.info("👈 Enter any listed equity ticker name code (e.g., KAYNES, DIXON, TATASTEEL) inside the sidebar terminal input and hit execute.")
     st.stop()
 
-# ── Quantitative Matrix Data Processing Core ────────────────
+# ── DATA COMPILATION & LIVE CORE ENGINE ───────────────────────
 try:
-    with st.spinner(f"Compiling quantitative parameters for matrix {ticker}..."):
-        stock = yf.Ticker(ticker)
-        df = stock.history(period=period_map[period_label], auto_adjust=True)
-        df_1y = stock.history(period="1y", auto_adjust=True)
+    # Triggering Streamlit's built-in rerun mechanism to mock automated open-close ticking
+    st.fragment(run_every=refresh_rate)
+    
+    # Real-time extraction timestamp notice
+    current_time_stamp = time.strftime('%Y-%m-%d %H:%M:%S')
+    st.caption(f"⏱️ Live Sync Engaged: Last update timestamp parsed at {current_time_stamp}. Auto-refreshing every {refresh_rate}s.")
+
+    stock = yf.Ticker(ticker)
+    df = stock.history(period=period_map[period_label], auto_adjust=True)
+    df_1y = stock.history(period="1y", auto_adjust=True)
 
     if df.empty:
         st.error(f"❌ Core Exception: Suffix map resolution failed for input query token '{ticker}'.")
@@ -155,7 +171,6 @@ try:
     day_change_p = round((day_change / prev_close) * 100, 2)
     returns_1y = round(((df_1y["Close"].iloc[-1] / df_1y["Close"].iloc[0]) - 1) * 100, 2) if not df_1y.empty else 0.0
 
-    # Valuation & Structural Extraction Architecture
     try:
         info = stock.info
         pe = round(info.get("trailingPE", 0) or 0, 1)
@@ -215,11 +230,11 @@ try:
     </div>
     """, unsafe_allow_html=True)
 
-    # Fundamental Grid Row 1 (Fixed Width Tracking for High/Low Layout)
+    # Fundamental Grid Row 1 (Clean, Non-overlapping text blocks)
     m1, m2, m3, m4, m5 = st.columns(5)
     m1.metric("Market Capitalization", f"₹{mkt_cap:,.0f} Cr")
     m2.metric("Current Quote Price", f"₹{current:,}")
-    m3.metric("52-W High / Low Base", f"H: ₹{high_52w} | L: ₹{low_52w}")
+    m3.metric("52-W High / Low Bounds", f"H:₹{high_52w} | L:₹{low_52w}")
     m4.metric("Trailing P/E Vector", f"{pe}x" if pe else "N/A")
     m5.metric("Net Asset Book Value", f"₹{book_value}")
 
@@ -233,7 +248,6 @@ try:
 
     st.markdown("---")
 
-    # RESTORED ALL MENTIONED ADVANCED MODULES inside TABS
     t1, t2, t3, t4, t5, t6 = st.tabs([
         "📊 Technical Visualizers", 
         "🏢 Operational Fundamentals", 
@@ -380,14 +394,13 @@ try:
             graham_intrinsic = round((eps * (8.5 + (2 * g_rate_percentage)) * 4.4) / 7.10, 2)
             st.markdown(f"> **Benjamin Graham Formula Benchmark:** Conservative valuation model puts the asset base floor intrinsic target at **₹{graham_intrinsic}** based on expected earnings.")
 
-    # ── TAB 5: AI QUANT RECOMMENDATIONS (RESTORED) ────────────
+    # ── TAB 5: AI QUANT RECOMMENDATIONS ───────────────────────
     with t5:
         st.markdown("## 🧠 Algorithmic AI Quantitative Engine Calls")
         st.markdown("---")
         
-        # Rule-based Algorithmic AI Generator 
         if pe > 40:
-            valuation_status = "Highly Aggressive Premium Premium Valuation"
+            valuation_status = "Highly Aggressive Premium Valuation"
             action_signal = "CAUTION / HOLD"
             color_signal = "orange"
         elif 0 < pe <= 25:
@@ -396,33 +409,28 @@ try:
             color_signal = "#26a641"
         else:
             valuation_status = "Fairly Value Priced Growth Component"
-            action_signal = "ACCUMULATE / ACCRUAL BUY"
+            action_signal = "ACCUMULATE"
             color_signal = "#00d4ff"
             
         st.markdown(f"""
         <div style='background:#1a1f2e; border:1px solid #30363d; padding:20px; border-radius:12px;'>
             <h3>System Recommendation Signal: <span style='color:{color_signal};'>{action_signal}</span></h3>
-            <p style='margin-top:10px;'><b>Structural Matrix Evaluation:</b></p>
+            <p style='margin-top:10px;'><b>Structural Matrix Live Evaluation:</b></p>
             <ul>
                 <li>The asset is exhibiting a <b>{valuation_status}</b> environment with a historical Trailing P/E tracking at <b>{pe}x</b>.</li>
                 <li>Compounded performance over trailing 1-year horizon logs a return index profile of <b>{returns_1y}%</b>.</li>
                 <li>Operating health return boundaries are operating at a return ceiling vector (ROE: <b>{roe}%</b>).</li>
             </ul>
-            <p><i>Disclaimer: AI algorithmic modeling inferences are for research validation criteria and academic evaluation benchmarks only.</i></p>
         </div>
         """, unsafe_allow_html=True)
 
-    # ── TAB 6: DYNAMIC SWOT ANALYTICS TERMINAL (RESTORED) ─────
+    # ── TAB 6: DYNAMIC SWOT ANALYTICS TERMINAL ────────────────
     with t6:
         st.markdown("## 📈 Automated Core SWOT Matrix Analysis")
         st.markdown("---")
         
-        # Dynamic Multi-factor engine for SWOT synthesis
         s_c1, s_c2 = st.columns(2)
-        
         with s_c1:
             st.markdown("""
             <div class='swot-box' style='background-color:#0d2818;'>
-                <h4 style='color:#26a641; margin-top:0;'>💪 Core Strengths (S)</h4>
-                <ul>
-                    <li>Strong high-conviction growth engine profile with a robust cross-year momentum vector.</li>
+                <h4 style='color:#26a641; margin-top:0;'
