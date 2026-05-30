@@ -19,14 +19,45 @@ if st.button("🚀 Analyze Stock", type="primary"):
             stock = yf.Ticker(ticker)
             df = stock.history(period="1y")
             info = stock.fast_info
+            quote = stock.info
+
+        # COMPANY OVERVIEW
+        st.markdown("## 🏢 Company Overview")
+        col1, col2 = st.columns([2,1])
+        with col1:
+            st.markdown(f"### {quote.get('longName', ticker)}")
+            st.markdown(f"**Sector:** {quote.get('sector', 'N/A')} | **Industry:** {quote.get('industry', 'N/A')}")
+            st.markdown(f"**Website:** {quote.get('website', 'N/A')}")
+            st.markdown("#### 📋 About")
+            st.write(quote.get('longBusinessSummary', 'No description available'))
+        with col2:
+            st.markdown("#### 🔑 Key Info")
+            st.info(f"""
+**Exchange:** NSE/BSE
+**Country:** India
+**Currency:** INR
+**Employees:** {quote.get('fullTimeEmployees', 'N/A'):,} if isinstance(quote.get('fullTimeEmployees'), int) else 'N/A'
+            """)
 
         # KEY METRICS
+        st.markdown("---")
         st.markdown("## 📊 Key Metrics")
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("💰 Current Price", f"₹{round(info.last_price, 2)}")
+        col1, col2, col3, col4, col5, col6 = st.columns(6)
+        col1.metric("💰 Price", f"₹{round(info.last_price, 2)}")
         col2.metric("📈 52W High", f"₹{round(info.year_high, 2)}")
         col3.metric("📉 52W Low", f"₹{round(info.year_low, 2)}")
-        col4.metric("🏢 Market Cap", f"₹{round(info.market_cap/1e9, 2)}B")
+        col4.metric("🏢 Mkt Cap", f"₹{round(info.market_cap/1e9, 2)}B")
+        col5.metric("📊 P/E", round(quote.get('trailingPE', 0), 1))
+        col6.metric("📚 P/B", round(quote.get('priceToBook', 0), 1))
+
+        st.markdown("---")
+        st.markdown("## 📐 Fundamental Ratios")
+        col1, col2, col3, col4, col5 = st.columns(5)
+        col1.metric("ROE %", f"{round(quote.get('returnOnEquity', 0)*100, 1)}%")
+        col2.metric("ROCE %", f"{round(quote.get('returnOnAssets', 0)*100, 1)}%")
+        col3.metric("Debt/Equity", round(quote.get('debtToEquity', 0), 2))
+        col4.metric("Div Yield", f"{round(quote.get('dividendYield', 0)*100, 2)}%")
+        col5.metric("Book Value", f"₹{round(quote.get('bookValue', 0), 2)}")
 
         # PRICE CHART
         st.markdown("---")
@@ -58,7 +89,7 @@ if st.button("🚀 Analyze Stock", type="primary"):
         # FINANCIALS
         st.markdown("---")
         st.markdown("## 💹 Financial Statements")
-        tab1, tab2, tab3 = st.tabs(["📊 Income Statement", "🏦 Balance Sheet", "💵 Cash Flow"])
+        tab1, tab2, tab3, tab4 = st.tabs(["📊 Income Statement", "🏦 Balance Sheet", "💵 Cash Flow", "👥 Investors"])
 
         with tab1:
             try:
@@ -70,14 +101,13 @@ if st.button("🚀 Analyze Stock", type="primary"):
                 income_show = income[cols] / 1e7
                 income_show.columns = [c + ' (₹ Cr)' for c in cols]
                 st.dataframe(income_show.style.format("{:,.0f}"))
-
                 fig3 = go.Figure()
                 for col in cols:
                     fig3.add_trace(go.Bar(name=col, x=income.index.astype(str), y=income[col]/1e7))
                 fig3.update_layout(template='plotly_dark', title='Revenue & Profit Trend (₹ Cr)', barmode='group')
                 st.plotly_chart(fig3, use_container_width=True)
             except:
-                st.warning("Income statement data not available for this stock")
+                st.warning("Income statement data not available")
 
         with tab2:
             try:
@@ -87,9 +117,7 @@ if st.button("🚀 Analyze Stock", type="primary"):
                 cols = ['Total Assets', 'Total Liabilities Net Minority Interest', 'Stockholders Equity']
                 cols = [c for c in cols if c in balance.columns]
                 balance_show = balance[cols] / 1e7
-                balance_show.columns = ['Total Assets (₹ Cr)', 'Total Liabilities (₹ Cr)', 'Equity (₹ Cr)']
                 st.dataframe(balance_show.style.format("{:,.0f}"))
-
                 fig4 = go.Figure()
                 fig4.add_trace(go.Bar(name='Assets', x=balance.index.astype(str), y=balance['Total Assets']/1e7))
                 if 'Stockholders Equity' in balance.columns:
@@ -97,7 +125,7 @@ if st.button("🚀 Analyze Stock", type="primary"):
                 fig4.update_layout(template='plotly_dark', title='Balance Sheet Trend (₹ Cr)', barmode='group')
                 st.plotly_chart(fig4, use_container_width=True)
             except:
-                st.warning("Balance sheet data not available for this stock")
+                st.warning("Balance sheet data not available")
 
         with tab3:
             try:
@@ -109,14 +137,28 @@ if st.button("🚀 Analyze Stock", type="primary"):
                 cashflow_show = cashflow[cols] / 1e7
                 cashflow_show.columns = [c + ' (₹ Cr)' for c in cols]
                 st.dataframe(cashflow_show.style.format("{:,.0f}"))
-
                 fig5 = go.Figure()
                 for col in cols:
                     fig5.add_trace(go.Bar(name=col, x=cashflow.index.astype(str), y=cashflow[col]/1e7))
                 fig5.update_layout(template='plotly_dark', title='Cash Flow Trend (₹ Cr)', barmode='group')
                 st.plotly_chart(fig5, use_container_width=True)
             except:
-                st.warning("Cash flow data not available for this stock")
+                st.warning("Cash flow data not available")
+
+        with tab4:
+            try:
+                holders = stock.institutional_holders
+                if holders is not None and not holders.empty:
+                    st.markdown("### 🏦 Top Institutional Investors")
+                    st.dataframe(holders)
+                else:
+                    st.warning("Institutional investor data not available")
+                major = stock.major_holders
+                if major is not None and not major.empty:
+                    st.markdown("### 📊 Shareholding Pattern")
+                    st.dataframe(major)
+            except:
+                st.warning("Investor data not available")
 
         # SWOT
         st.markdown("---")
