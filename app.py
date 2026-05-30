@@ -1,362 +1,168 @@
 import streamlit as st
-import yfinance as yf
+import requests
 import plotly.graph_objects as go
 import pandas as pd
-import time
-import requests
 
 st.set_page_config(page_title="Indian Equity Research Analyzer", page_icon="📈", layout="wide")
 
-# Custom CSS - Screener style
-st.markdown("""
-<style>
-.metric-box {
-    background-color: #1e2130;
-    padding: 15px;
-    border-radius: 8px;
-    border-left: 4px solid #00bfff;
-    margin: 5px;
-}
-.company-header {
-    background: linear-gradient(90deg, #1a1a2e, #16213e);
-    padding: 20px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-}
-</style>
-""", unsafe_allow_html=True)
+API_KEY = "JTZEICIDLVXZEO06"
 
 st.title("📈 Indian Equity Research Analyzer")
 st.markdown("##### By Pratyush Singh | MBA - Banking & Financial Engineering | Chandigarh University")
 st.markdown("---")
 
-ticker = st.text_input("🔍 Enter NSE Stock Symbol", value="DIXON.NS", placeholder="e.g. DIXON.NS, KAYNES.NS, TCS.NS")
+ticker = st.text_input("🔍 Enter BSE/NSE Stock Symbol", value="RELIANCE.BSE", placeholder="e.g. RELIANCE.BSE, TCS.BSE, DIXON.BSE")
 
 if st.button("🚀 Analyze Stock", type="primary"):
-    try:
-        with st.spinner("Fetching live data..."):
-            time.sleep(4)
-            stock = yf.Ticker(ticker)
-            df = stock.history(period="1y", auto_adjust=True)
+    with st.spinner("Fetching live data..."):
 
-            if df.empty:
-                st.error("❌ Stock not found! Check symbol.")
-                st.stop()
+        # FETCH PRICE DATA
+        url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={ticker}&outputsize=full&apikey={API_KEY}"
+        r = requests.get(url)
+        data = r.json()
 
-        # COMPANY HEADER
-        try:
-            quote = stock.info
-            company_name = quote.get('longName', ticker)
-            sector = quote.get('sector', 'N/A')
-            industry = quote.get('industry', 'N/A')
-            website = quote.get('website', 'N/A')
-            description = quote.get('longBusinessSummary', 'No description available')
-            employees = quote.get('fullTimeEmployees', 'N/A')
-            pe = round(quote.get('trailingPE', 0), 1)
-            pb = round(quote.get('priceToBook', 0), 1)
-            roe = round(quote.get('returnOnEquity', 0) * 100, 1)
-            roce = round(quote.get('returnOnAssets', 0) * 100, 1)
-            debt_equity = round(quote.get('debtToEquity', 0), 2)
-            div_yield = round(quote.get('dividendYield', 0) * 100, 2)
-            book_value = round(quote.get('bookValue', 0), 2)
-            profit_margin = round(quote.get('profitMargins', 0) * 100, 1)
-            revenue_growth = round(quote.get('revenueGrowth', 0) * 100, 1)
-            earnings_growth = round(quote.get('earningsGrowth', 0) * 100, 1)
-        except:
-            company_name = ticker
-            sector = industry = 'N/A'
-            pe = pb = roe = roce = debt_equity = div_yield = book_value = profit_margin = 0
-            revenue_growth = earnings_growth = 0
-            description = 'Data loading...'
-            employees = 'N/A'
+        if "Time Series (Daily)" not in data:
+            st.error("❌ Stock not found! Try: RELIANCE.BSE or TCS.BSE")
+            st.stop()
 
-        # COMPANY NAME + BASIC INFO
-        st.markdown(f"## 🏢 {company_name}")
-        col1, col2, col3 = st.columns(3)
-        col1.markdown(f"**Sector:** {sector}")
-        col2.markdown(f"**Industry:** {industry}")
-        col3.markdown(f"**Website:** {website}")
+        ts = data["Time Series (Daily)"]
+        df = pd.DataFrame(ts).T
+        df.index = pd.to_datetime(df.index)
+        df = df.sort_index()
+        df = df.astype(float)
+        df.columns = ['Open', 'High', 'Low', 'Close', 'Volume']
+        df = df.last('365D')
 
-        # KEY METRICS - SCREENER STYLE
-        st.markdown("---")
+        # KEY METRICS
         st.markdown("## 📊 Key Metrics")
+        current = df['Close'].iloc[-1]
+        high_52w = df['High'].max()
+        low_52w = df['Low'].min()
+        returns_1y = round(((df['Close'].iloc[-1] / df['Close'].iloc[0]) - 1) * 100, 2)
 
-        try:
-            info = stock.fast_info
-            current_price = round(info.last_price, 2)
-            high_52w = round(info.year_high, 2)
-            low_52w = round(info.year_low, 2)
-            mkt_cap = round(info.market_cap / 1e7, 2)
-        except:
-            current_price = round(df['Close'].iloc[-1], 2)
-            high_52w = round(df['High'].max(), 2)
-            low_52w = round(df['Low'].min(), 2)
-            mkt_cap = 0
-
-        col1, col2, col3, col4, col5, col6 = st.columns(6)
-        col1.metric("Market Cap (₹ Cr)", f"{mkt_cap:,.0f}")
-        col2.metric("Current Price", f"₹{current_price}")
-        col3.metric("High / Low", f"₹{high_52w} / ₹{low_52w}")
-        col4.metric("Stock P/E", pe)
-        col5.metric("Book Value", f"₹{book_value}")
-        col6.metric("Dividend Yield", f"{div_yield}%")
-
-        col1, col2, col3, col4, col5, col6 = st.columns(6)
-        col1.metric("ROCE %", f"{roce}%")
-        col2.metric("ROE %", f"{roe}%")
-        col3.metric("P/B Ratio", pb)
-        col4.metric("Debt/Equity", debt_equity)
-        col5.metric("Profit Margin", f"{profit_margin}%")
-        col6.metric("Revenue Growth", f"{revenue_growth}%")
-
-        # ABOUT COMPANY
-        st.markdown("---")
-        st.markdown("## 📋 About Company")
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            st.write(description[:800] + "..." if len(str(description)) > 800 else description)
-        with col2:
-            st.info(f"""
-**🏭 Sector:** {sector}
-**🔧 Industry:** {industry}
-**👥 Employees:** {employees:,} if isinstance(employees, int) else {employees}
-**📈 Earnings Growth:** {earnings_growth}%
-**💹 Revenue Growth:** {revenue_growth}%
-            """)
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("💰 Current Price", f"₹{round(current, 2)}")
+        col2.metric("📈 52W High", f"₹{round(high_52w, 2)}")
+        col3.metric("📉 52W Low", f"₹{round(low_52w, 2)}")
+        col4.metric("📊 1Y Return", f"{returns_1y}%")
 
         # PRICE CHART
         st.markdown("---")
         st.markdown("## 📉 Price Chart + Moving Averages")
         df['MA50'] = df['Close'].rolling(50).mean()
         df['MA200'] = df['Close'].rolling(200).mean()
-        delta = df['Close'].diff()
-        gain = delta.where(delta > 0, 0).rolling(14).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
-        rs = gain / loss
-        df['RSI'] = 100 - (100 / (1 + rs))
 
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name='Price', line=dict(color='white', width=2)))
         fig.add_trace(go.Scatter(x=df.index, y=df['MA50'], name='50 DMA', line=dict(color='#00bfff', width=1.5)))
         fig.add_trace(go.Scatter(x=df.index, y=df['MA200'], name='200 DMA', line=dict(color='orange', width=1.5)))
-        fig.update_layout(template='plotly_dark', title=f'{company_name} — 1Y Price Chart', height=400)
+        fig.update_layout(template='plotly_dark', title=f'{ticker} - Price Chart', height=450)
         st.plotly_chart(fig, use_container_width=True)
 
         # RSI
         st.markdown("## 📊 RSI Indicator")
+        delta = df['Close'].diff()
+        gain = delta.where(delta > 0, 0).rolling(14).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
+        rs = gain / loss
+        df['RSI'] = 100 - (100 / (1 + rs))
+        rsi = df['RSI'].iloc[-1]
+
         fig2 = go.Figure()
         fig2.add_trace(go.Scatter(x=df.index, y=df['RSI'], name='RSI', line=dict(color='yellow')))
-        fig2.add_hline(y=70, line_color="red", annotation_text="Overbought (70)")
-        fig2.add_hline(y=30, line_color="green", annotation_text="Oversold (30)")
+        fig2.add_hline(y=70, line_color="red", annotation_text="Overbought")
+        fig2.add_hline(y=30, line_color="green", annotation_text="Oversold")
         fig2.update_layout(template='plotly_dark', title='RSI Indicator', height=300)
         st.plotly_chart(fig2, use_container_width=True)
 
-        # FINANCIAL STATEMENTS
+        # SWOT
         st.markdown("---")
-        st.markdown("## 💹 Financial Statements")
-        tab1, tab2, tab3, tab4 = st.tabs(["📊 Income Statement", "🏦 Balance Sheet", "💵 Cash Flow", "👥 Investors"])
-
-        with tab1:
-            try:
-                income = stock.financials.T
-                income.index = income.index.year
-                income = income.sort_index()
-                cols = [c for c in ['Total Revenue', 'Gross Profit', 'Operating Income', 'Net Income'] if c in income.columns]
-                df_show = (income[cols] / 1e7).round(0)
-                df_show.columns = [c + ' (₹ Cr)' for c in cols]
-                st.dataframe(df_show.style.format("{:,.0f}"), use_container_width=True)
-                fig3 = go.Figure()
-                for col in cols:
-                    fig3.add_trace(go.Bar(name=col, x=income.index.astype(str), y=income[col] / 1e7))
-                fig3.update_layout(template='plotly_dark', title='Revenue & Profit Trend (₹ Cr)', barmode='group', height=400)
-                st.plotly_chart(fig3, use_container_width=True)
-            except:
-                st.warning("Income statement data not available for this stock")
-
-        with tab2:
-            try:
-                balance = stock.balance_sheet.T
-                balance.index = balance.index.year
-                balance = balance.sort_index()
-                cols = [c for c in ['Total Assets', 'Total Liabilities Net Minority Interest', 'Stockholders Equity', 'Total Debt'] if c in balance.columns]
-                df_show = (balance[cols] / 1e7).round(0)
-                st.dataframe(df_show.style.format("{:,.0f}"), use_container_width=True)
-                fig4 = go.Figure()
-                if 'Total Assets' in balance.columns:
-                    fig4.add_trace(go.Bar(name='Total Assets', x=balance.index.astype(str), y=balance['Total Assets'] / 1e7))
-                if 'Stockholders Equity' in balance.columns:
-                    fig4.add_trace(go.Bar(name='Equity', x=balance.index.astype(str), y=balance['Stockholders Equity'] / 1e7))
-                if 'Total Debt' in balance.columns:
-                    fig4.add_trace(go.Bar(name='Total Debt', x=balance.index.astype(str), y=balance['Total Debt'] / 1e7))
-                fig4.update_layout(template='plotly_dark', title='Balance Sheet Trend (₹ Cr)', barmode='group', height=400)
-                st.plotly_chart(fig4, use_container_width=True)
-            except:
-                st.warning("Balance sheet data not available")
-
-        with tab3:
-            try:
-                cashflow = stock.cashflow.T
-                cashflow.index = cashflow.index.year
-                cashflow = cashflow.sort_index()
-                cols = [c for c in ['Operating Cash Flow', 'Investing Cash Flow', 'Financing Cash Flow', 'Free Cash Flow'] if c in cashflow.columns]
-                df_show = (cashflow[cols] / 1e7).round(0)
-                df_show.columns = [c + ' (₹ Cr)' for c in cols]
-                st.dataframe(df_show.style.format("{:,.0f}"), use_container_width=True)
-                fig5 = go.Figure()
-                for col in cols:
-                    fig5.add_trace(go.Bar(name=col, x=cashflow.index.astype(str), y=cashflow[col] / 1e7))
-                fig5.update_layout(template='plotly_dark', title='Cash Flow Trend (₹ Cr)', barmode='group', height=400)
-                st.plotly_chart(fig5, use_container_width=True)
-            except:
-                st.warning("Cash flow data not available")
-
-        with tab4:
-            try:
-                st.markdown("### 🏦 Top Institutional Holders")
-                holders = stock.institutional_holders
-                if holders is not None and not holders.empty:
-                    st.dataframe(holders, use_container_width=True)
-                else:
-                    st.warning("Institutional data not available")
-
-                st.markdown("### 📊 Major Shareholding Pattern")
-                major = stock.major_holders
-                if major is not None and not major.empty:
-                    st.dataframe(major, use_container_width=True)
-            except:
-                st.warning("Investor data not available")
-
-        # AI POWERED STOCK SPECIFIC SWOT
-        st.markdown("---")
-        st.markdown("## 🔍 AI-Powered SWOT Analysis")
-        st.caption("Generated based on actual financial data of this company")
-
+        st.markdown("## 🔍 SWOT Analysis")
         col1, col2 = st.columns(2)
         with col1:
-            # STRENGTHS based on actual data
-            strengths = ["Listed on NSE/BSE — Regulated & transparent"]
-            if roe > 15:
-                strengths.append(f"Strong ROE of {roe}% — Efficient use of equity")
-            if profit_margin > 10:
-                strengths.append(f"Healthy profit margins of {profit_margin}%")
-            if revenue_growth > 10:
-                strengths.append(f"Strong revenue growth of {revenue_growth}%")
-            if debt_equity < 0.5:
-                strengths.append(f"Low debt — D/E ratio of {debt_equity} — financially strong")
-            if pe > 0 and pe < 25:
-                strengths.append(f"Reasonably valued at P/E of {pe}")
-            if len(strengths) < 3:
-                strengths.append("Established business with operational track record")
-
+            strengths = [
+                f"1Y Return of {returns_1y}% shows strong performance" if returns_1y > 10 else "Stable price action",
+                f"Trading near 52W High ₹{round(high_52w,0)}" if current > high_52w * 0.85 else "Price consolidating",
+                "Listed on BSE/NSE — High liquidity & transparency",
+                "Part of India growth story"
+            ]
             st.success("**💪 STRENGTHS**\n" + "\n".join([f"- {s}" for s in strengths]))
-
-            # WEAKNESSES based on actual data
-            weaknesses = []
-            if roe < 12:
-                weaknesses.append(f"Low ROE of {roe}% — below industry benchmark of 15%")
-            if debt_equity > 1:
-                weaknesses.append(f"High debt — D/E ratio of {debt_equity} — leverage risk")
-            if profit_margin < 8:
-                weaknesses.append(f"Thin profit margins of {profit_margin}% — execution risk")
-            if pe > 50:
-                weaknesses.append(f"Expensive valuation — P/E of {pe} — priced for perfection")
-            if revenue_growth < 0:
-                weaknesses.append(f"Negative revenue growth of {revenue_growth}% — demand concern")
-            if len(weaknesses) == 0:
-                weaknesses.append("High valuation requires sustained growth delivery")
-            weaknesses.append("Dependent on broader market & macro conditions")
-
+            weaknesses = [
+                f"Down {round(((current/high_52w)-1)*100,1)}% from 52W High" if current < high_52w * 0.9 else "Near 52W high — limited upside",
+                f"RSI at {round(rsi,1)} — Overbought risk" if rsi > 65 else f"RSI at {round(rsi,1)}",
+                "Dependent on macro & global factors",
+                "Sector competition risk"
+            ]
             st.error("**⚠️ WEAKNESSES**\n" + "\n".join([f"- {w}" for w in weaknesses]))
-
         with col2:
-            # OPPORTUNITIES - sector specific
-            opportunities = [
-                "India GDP growth 6-7% — domestic consumption tailwind",
-                "Government PLI schemes supporting Indian manufacturing",
-                "Rising middle class & premiumization trend in India",
-                "Digital India & Make in India policy support",
-                "Export market expansion — India becoming global supplier"
-            ]
-            if revenue_growth > 0:
-                opportunities.append(f"Positive revenue momentum of {revenue_growth}% continuing")
-
-            st.info("**🚀 OPPORTUNITIES**\n" + "\n".join([f"- {o}" for o in opportunities[:4]]))
-
-            # THREATS - data driven
-            threats = [
-                "Global recession risk impacting demand",
-                "RBI monetary policy & interest rate risk",
-                "Intense competition from domestic & global players",
-                "Regulatory & compliance risk",
-                "INR depreciation impacting import costs"
-            ]
-            if pe > 40:
-                threats.append(f"High P/E of {pe} — any growth miss can cause sharp correction")
-            if debt_equity > 0.5:
-                threats.append(f"Rising interest rates impact on debt servicing")
-
-            st.warning("**🌧️ THREATS**\n" + "\n".join([f"- {t}" for t in threats[:4]]))
+            st.info("""
+**🚀 OPPORTUNITIES**
+- India GDP growth 6-7% tailwind
+- Government PLI scheme support
+- Export market expansion
+- Growing middle class demand
+- Digital India momentum
+            """)
+            st.warning("""
+**🌧️ THREATS**
+- Global recession risk
+- RBI rate hike risk
+- Rupee depreciation
+- Intense competition
+- Regulatory changes
+            """)
 
         # AI SIGNAL
         st.markdown("---")
         st.markdown("## 🤖 AI Buy/Sell/Hold Signal")
-        last = df['Close'].iloc[-1]
         ma50 = df['MA50'].iloc[-1]
         ma200 = df['MA200'].iloc[-1]
-        rsi = df['RSI'].iloc[-1]
 
         score = 0
         reasons = []
 
-        if last > ma50:
+        if current > ma50:
             score += 1
             reasons.append("✅ Price above 50 DMA — short term bullish")
         else:
             score -= 1
-            reasons.append("❌ Price below 50 DMA — short term bearish")
+            reasons.append("❌ Price below 50 DMA — bearish")
 
-        if last > ma200:
+        if current > ma200:
             score += 1
             reasons.append("✅ Price above 200 DMA — long term uptrend")
         else:
             score -= 1
-            reasons.append("❌ Price below 200 DMA — long term downtrend")
+            reasons.append("❌ Price below 200 DMA — downtrend")
 
-        if rsi < 70 and rsi > 40:
+        if 30 < rsi < 70:
             score += 1
-            reasons.append(f"✅ RSI at {round(rsi,1)} — healthy momentum")
+            reasons.append(f"✅ RSI {round(rsi,1)} — healthy zone")
         elif rsi > 70:
             score -= 1
-            reasons.append(f"⚠️ RSI at {round(rsi,1)} — overbought zone")
+            reasons.append(f"⚠️ RSI {round(rsi,1)} — overbought")
         else:
             score += 1
-            reasons.append(f"✅ RSI at {round(rsi,1)} — oversold — potential bounce")
+            reasons.append(f"✅ RSI {round(rsi,1)} — oversold bounce possible")
 
-        if roe > 15:
+        if returns_1y > 15:
             score += 1
-            reasons.append(f"✅ ROE {roe}% — strong fundamentals")
-        if debt_equity < 0.5:
-            score += 1
-            reasons.append(f"✅ Low debt D/E {debt_equity} — financially stable")
-        if revenue_growth > 10:
-            score += 1
-            reasons.append(f"✅ Revenue growing at {revenue_growth}%")
+            reasons.append(f"✅ Strong 1Y return of {returns_1y}%")
+        elif returns_1y < 0:
+            score -= 1
+            reasons.append(f"❌ Negative 1Y return of {returns_1y}%")
 
         for r in reasons:
             st.write(r)
 
-        st.markdown("### Final Signal:")
+        st.markdown("### 🎯 Final Signal:")
         if score >= 3:
-            st.success(f"🟢 **BUY** — Score: {score}/6 — Strong bullish signals!")
+            st.success(f"🟢 **BUY** — Score {score}/4 — Strong bullish setup!")
         elif score <= 0:
-            st.error(f"🔴 **SELL** — Score: {score}/6 — Bearish signals dominating!")
+            st.error(f"🔴 **SELL** — Score {score}/4 — Bearish signals!")
         else:
-            st.warning(f"🟡 **HOLD** — Score: {score}/6 — Mixed signals — watch closely!")
+            st.warning(f"🟡 **HOLD** — Score {score}/4 — Mixed signals, watch closely!")
 
         st.markdown("---")
-        st.caption("⚠️ Disclaimer: This tool is for educational purposes only. Not financial advice. Always do your own research.")
-        st.caption("🏗️ Built by Pratyush Singh | MBA Banking & Financial Engineering | Chandigarh University")
-
-    except Exception as e:
-        st.error(f"⚠️ Error: {str(e)[:150]}")
-        st.info("💡 Yahoo Finance rate limit — wait 2-3 minutes and retry!")
+        st.caption("⚠️ Educational purpose only. Not financial advice.")
+        st.caption("Built by Pratyush Singh | MBA Banking & Financial Engineering | Chandigarh University")
