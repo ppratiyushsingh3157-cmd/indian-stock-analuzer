@@ -20,6 +20,7 @@ if st.button("🚀 Analyze Stock", type="primary"):
             df = stock.history(period="1y")
             info = stock.fast_info
 
+        # KEY METRICS
         st.markdown("## 📊 Key Metrics")
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("💰 Current Price", f"₹{round(info.last_price, 2)}")
@@ -27,6 +28,7 @@ if st.button("🚀 Analyze Stock", type="primary"):
         col3.metric("📉 52W Low", f"₹{round(info.year_low, 2)}")
         col4.metric("🏢 Market Cap", f"₹{round(info.market_cap/1e9, 2)}B")
 
+        # PRICE CHART
         st.markdown("---")
         st.markdown("## 📉 Price Chart + Moving Averages")
         df['MA50'] = df['Close'].rolling(50).mean()
@@ -44,6 +46,7 @@ if st.button("🚀 Analyze Stock", type="primary"):
         fig.update_layout(template='plotly_dark', title=f'{ticker} - Price Chart')
         st.plotly_chart(fig, use_container_width=True)
 
+        # RSI
         st.markdown("## 📊 RSI Indicator")
         fig2 = go.Figure()
         fig2.add_trace(go.Scatter(x=df.index, y=df['RSI'], name='RSI', line=dict(color='yellow')))
@@ -52,6 +55,70 @@ if st.button("🚀 Analyze Stock", type="primary"):
         fig2.update_layout(template='plotly_dark', title='RSI Indicator')
         st.plotly_chart(fig2, use_container_width=True)
 
+        # FINANCIALS
+        st.markdown("---")
+        st.markdown("## 💹 Financial Statements")
+        tab1, tab2, tab3 = st.tabs(["📊 Income Statement", "🏦 Balance Sheet", "💵 Cash Flow"])
+
+        with tab1:
+            try:
+                income = stock.financials.T
+                income.index = income.index.year
+                income = income.sort_index()
+                cols = ['Total Revenue', 'Gross Profit', 'Net Income']
+                cols = [c for c in cols if c in income.columns]
+                income_show = income[cols] / 1e7
+                income_show.columns = [c + ' (₹ Cr)' for c in cols]
+                st.dataframe(income_show.style.format("{:,.0f}"))
+
+                fig3 = go.Figure()
+                for col in cols:
+                    fig3.add_trace(go.Bar(name=col, x=income.index.astype(str), y=income[col]/1e7))
+                fig3.update_layout(template='plotly_dark', title='Revenue & Profit Trend (₹ Cr)', barmode='group')
+                st.plotly_chart(fig3, use_container_width=True)
+            except:
+                st.warning("Income statement data not available for this stock")
+
+        with tab2:
+            try:
+                balance = stock.balance_sheet.T
+                balance.index = balance.index.year
+                balance = balance.sort_index()
+                cols = ['Total Assets', 'Total Liabilities Net Minority Interest', 'Stockholders Equity']
+                cols = [c for c in cols if c in balance.columns]
+                balance_show = balance[cols] / 1e7
+                balance_show.columns = ['Total Assets (₹ Cr)', 'Total Liabilities (₹ Cr)', 'Equity (₹ Cr)']
+                st.dataframe(balance_show.style.format("{:,.0f}"))
+
+                fig4 = go.Figure()
+                fig4.add_trace(go.Bar(name='Assets', x=balance.index.astype(str), y=balance['Total Assets']/1e7))
+                if 'Stockholders Equity' in balance.columns:
+                    fig4.add_trace(go.Bar(name='Equity', x=balance.index.astype(str), y=balance['Stockholders Equity']/1e7))
+                fig4.update_layout(template='plotly_dark', title='Balance Sheet Trend (₹ Cr)', barmode='group')
+                st.plotly_chart(fig4, use_container_width=True)
+            except:
+                st.warning("Balance sheet data not available for this stock")
+
+        with tab3:
+            try:
+                cashflow = stock.cashflow.T
+                cashflow.index = cashflow.index.year
+                cashflow = cashflow.sort_index()
+                cols = ['Operating Cash Flow', 'Free Cash Flow']
+                cols = [c for c in cols if c in cashflow.columns]
+                cashflow_show = cashflow[cols] / 1e7
+                cashflow_show.columns = [c + ' (₹ Cr)' for c in cols]
+                st.dataframe(cashflow_show.style.format("{:,.0f}"))
+
+                fig5 = go.Figure()
+                for col in cols:
+                    fig5.add_trace(go.Bar(name=col, x=cashflow.index.astype(str), y=cashflow[col]/1e7))
+                fig5.update_layout(template='plotly_dark', title='Cash Flow Trend (₹ Cr)', barmode='group')
+                st.plotly_chart(fig5, use_container_width=True)
+            except:
+                st.warning("Cash flow data not available for this stock")
+
+        # SWOT
         st.markdown("---")
         st.markdown("## 🔍 SWOT Analysis")
         col1, col2 = st.columns(2)
@@ -86,6 +153,7 @@ if st.button("🚀 Analyze Stock", type="primary"):
 - Regulatory changes
             """)
 
+        # AI SIGNAL
         st.markdown("---")
         st.markdown("## 🤖 AI Signal")
         last = df['Close'].iloc[-1]
@@ -108,4 +176,4 @@ if st.button("🚀 Analyze Stock", type="primary"):
 
     except Exception as e:
         st.error("⚠️ Data fetch failed! Please wait 30 seconds and try again.")
-        st.info("💡 Tip: Yahoo Finance has rate limits. Wait a moment and retry!")
+        st.info("💡 Yahoo Finance rate limit — wait a moment and retry!")
