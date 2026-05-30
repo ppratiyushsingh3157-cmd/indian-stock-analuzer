@@ -15,7 +15,7 @@ st.set_page_config(
 # ── Custom CSS ───────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 * { font-family: 'Inter', sans-serif; }
 .main { background-color: #0a0e1a; }
 .stApp { background-color: #0a0e1a; }
@@ -39,6 +39,11 @@ div[data-testid="metric-container"] {
     border: 1px solid #30363d;
     border-radius: 10px;
     padding: 12px;
+}
+/* Fixed truncated metric text overflow issue */
+div[data-testid="stMetricValue"] {
+    font-size: 1.6rem !important;
+    white-space: nowrap !important;
 }
 .stTabs [data-baseweb="tab"] {
     background-color: #1a1f2e;
@@ -277,12 +282,14 @@ try:
         fig.add_trace(go.Scatter(x=df.index, y=df["MA200"], name="200 dMA", line=dict(color="orange", width=1.5)), row=1, col=1)
 
         if show_bollinger:
-            fig.add_trace(go.Scatter(x=df.index, y=df["BB_upper"], name="BB Upper", line=dict(color="#ffffff40", dash="dot")), row=1, col=1)
-            fig.add_trace(go.Scatter(x=df.index, y=df["BB_lower"], name="BB Lower", fill="tonexty", fillcolor="rgba(255,255,255,0.03)", line=dict(color="#ffffff40", dash="dot")), row=1, col=1)
+            fig.add_trace(go.Scatter(x=df.index, y=df["BB_upper"], name="BB Upper", line=dict(color="#ffffff", dash="dot")), row=1, col=1)
+            fig.add_trace(go.Scatter(x=df.index, y=df["BB_lower"], name="BB Lower", fill="tonexty", fillcolor="rgba(255,255,255,0.03)", line=dict(color="#ffffff", dash="dot")), row=1, col=1)
 
         fig.add_trace(go.Scatter(x=df.index, y=df["RSI"], name="RSI (14)", line=dict(color="#e3b341", width=1.5)), row=2, col=1)
-        fig.add_hline(y=70, line_color="#da363360", line_dash="dash", row=2, col=1)
-        fig.add_hline(y=30, line_color="#26a64160", line_dash="dash", row=2, col=1)
+        
+        # FIX: Replaced transparent 8-digit hex codes with valid clean string styles
+        fig.add_hline(y=70, line_color="#da3633", line_dash="dash", row=2, col=1)
+        fig.add_hline(y=30, line_color="#26a641", line_dash="dash", row=2, col=1)
 
         if show_volume:
             v_colors = ["#26a641" if df["Close"].iloc[i] >= df["Open"].iloc[i] else "#da3633" for i in range(len(df))]
