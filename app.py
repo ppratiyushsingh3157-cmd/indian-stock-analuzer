@@ -5,6 +5,9 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+# ----------------------------------------------------
+# 1. INSTITUTIONAL TERMINAL ARCHITECTURE CANVAS
+# ----------------------------------------------------
 st.set_page_config(
     page_title="ProAnalyzer — Institutional Equity Terminal",
     page_icon="📊",
@@ -12,6 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Premium Screener.in Palette Styling Framework
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -38,13 +42,16 @@ div[data-testid="stMetricLabel"] { color: #9CA3AF !important; font-size: 12px !i
 </style>
 """, unsafe_allow_html=True)
 
+# ----------------------------------------------------
+# 2. CORE MASTER INDEX DEFINITIONS
+# ----------------------------------------------------
 NIFTY50 = {
     "Reliance Industries":"RELIANCE.NS","TCS":"TCS.NS","HDFC Bank":"HDFCBANK.NS",
     "ICICI Bank":"ICICIBANK.NS","Infosys":"INFY.NS","SBI":"SBIN.NS",
     "Bharti Airtel":"BHARTIARTL.NS","ITC":"ITC.NS","Kotak Mahindra Bank":"KOTAKBANK.NS",
     "HUL":"HINDUNILVR.NS","Axis Bank":"AXISBANK.NS","L&T":"LT.NS",
     "Asian Paints":"ASIANPAINT.NS","HCL Technologies":"HCLTECH.NS",
-    "Bajaj Finance":"BAJFINANCE.NS","Sun Pharma":"SUNPHARMA.NS","Wipro":"WIPRO.NS",
+    "Bajaj Finance":"BAJFINANCE.NS","Sun Pharma":"SUNPHARMA.NS","Wipro":"Wipro.NS",
     "Nestle India":"NESTLEIND.NS","UltraTech Cement":"ULTRACEMCO.NS","Titan":"TITAN.NS",
     "Tech Mahindra":"TECHM.NS","Power Grid":"POWERGRID.NS","NTPC":"NTPC.NS",
     "IndusInd Bank":"INDUSINDBK.NS","Tata Motors":"TATAMOTORS.NS","M&M":"M&M.NS",
@@ -80,28 +87,14 @@ SENSEX = {
     "Nestle India":"NESTLEIND.NS","Tech Mahindra":"TECHM.NS","Bajaj Finserv":"BAJAJFINSV.NS",
 }
 
-PEERS_MAP = {
-    "TCS.NS":["INFY.NS","WIPRO.NS","HCLTECH.NS","TECHM.NS","LTIM.NS"],
-    "INFY.NS":["TCS.NS","WIPRO.NS","HCLTECH.NS","TECHM.NS","LTIM.NS"],
-    "WIPRO.NS":["TCS.NS","INFY.NS","HCLTECH.NS","TECHM.NS"],
-    "HCLTECH.NS":["TCS.NS","INFY.NS","WIPRO.NS","TECHM.NS"],
-    "HDFCBANK.NS":["ICICIBANK.NS","AXISBANK.NS","KOTAKBANK.NS","SBIN.NS","INDUSINDBK.NS"],
-    "ICICIBANK.NS":["HDFCBANK.NS","AXISBANK.NS","KOTAKBANK.NS","SBIN.NS"],
-    "AXISBANK.NS":["HDFCBANK.NS","ICICIBANK.NS","KOTAKBANK.NS","SBIN.NS"],
-    "SBIN.NS":["HDFCBANK.NS","ICICIBANK.NS","PNB.NS","BANKBARODA.NS","CANBK.NS"],
-    "KOTAKBANK.NS":["HDFCBANK.NS","ICICIBANK.NS","AXISBANK.NS","INDUSINDBK.NS"],
-    "MARUTI.NS":["TATAMOTORS.NS","M&M.NS","BAJAJ-AUTO.NS","HEROMOTOCO.NS","EICHERMOT.NS"],
-    "TATAMOTORS.NS":["MARUTI.NS","M&M.NS","BAJAJ-AUTO.NS","HEROMOTOCO.NS"],
-    "SUNPHARMA.NS":["DRREDDY.NS","CIPLA.NS","DIVISLAB.NS"],
-    "DRREDDY.NS":["SUNPHARMA.NS","CIPLA.NS","DIVISLAB.NS"],
-    "RELIANCE.NS":["ONGC.NS","BPCL.NS","ADANIENT.NS"],
-    "HINDUNILVR.NS":["ITC.NS","NESTLEIND.NS","BRITANNIA.NS","TATACONSUM.NS"],
-    "ITC.NS":["HINDUNILVR.NS","NESTLEIND.NS","BRITANNIA.NS"],
-    "DIXON.NS":["KAYNES.NS","AMBER.NS","PGEL.NS"],
-    "KAYNES.NS":["DIXON.NS","AMBER.NS","PGEL.NS"],
-    "LT.NS":["SIEMENS.NS","ABB.NS","BHEL.NS"],
-    "BAJFINANCE.NS":["BAJAJFINSV.NS","CHOLAFIN.NS","MUTHOOTFIN.NS"],
-}
+# High-Fidelity Comprehensive Dynamic Target Array Pool
+TICKER_UNIVERSE_POOL = [
+    "INFY.NS", "TCS.NS", "WIPRO.NS", "HCLTECH.NS", "TECHM.NS", "LTIM.NS", "KPITTECH.NS",
+    "CDSL.NS", "BSE.NS", "MCX.NS", "IEX.NS",
+    "DIXON.NS", "AMBER.NS", "KAYNES.NS", "SYRMA.NS",
+    "RELIANCE.NS", "ONGC.NS", "BPCL.NS", "IOC.NS",
+    "SBIN.NS", "HDFCBANK.NS", "ICICIBANK.NS", "AXISBANK.NS", "KOTAKBANK.NS"
+]
 
 def calc_rsi(series, period=14):
     delta = series.diff()
@@ -112,10 +105,15 @@ def calc_rsi(series, period=14):
 
 def safe(val, mult=1, dec=2):
     try:
-        return round((val or 0) * mult, dec)
+        if pd.isna(val) or val is None:
+            return 0
+        return round(float(val) * mult, dec)
     except:
         return 0
 
+# ----------------------------------------------------
+# 3. SIDEBAR CONTROLS MAPPING NODE
+# ----------------------------------------------------
 with st.sidebar:
     st.markdown("## 📊 ProAnalyzer")
     st.markdown("<p style='color:#6B7280;font-size:12px;'>Institutional Equity Terminal</p>", unsafe_allow_html=True)
@@ -170,6 +168,9 @@ if not analyze:
 
 horizon = {"1M":30,"3M":90,"6M":180,"1Y":365,"3Y":1095,"5Y":1825}
 
+# ----------------------------------------------------
+# 4. ROBUST PIPELINE DATA INGESTION ENGINE
+# ----------------------------------------------------
 try:
     with st.spinner(f"Fetching data for {ticker}..."):
         stock   = yf.Ticker(ticker)
@@ -179,6 +180,7 @@ try:
         st.error("Symbol not found. Check ticker and try again.")
         st.stop()
 
+    # Financial Signal Track Computations
     df_full["EMA50"]    = df_full["Close"].ewm(span=50,  adjust=False).mean()
     df_full["EMA200"]   = df_full["Close"].ewm(span=200, adjust=False).mean()
     df_full["RSI"]      = calc_rsi(df_full["Close"])
@@ -192,7 +194,7 @@ try:
     df = df_full.tail(horizon[period_label]).copy()
 
     try:
-        fi      = stock.fast_info
+        fi = stock.fast_info
         current = round(fi.last_price, 2)
         mkt_cap = fi.market_cap
     except:
@@ -384,7 +386,7 @@ try:
             future_eps = eps * ((1 + g/100) ** yr)
             dcf_value  = (future_eps * 15) / ((1 + dr/100) ** yr)
             mos        = round(((dcf_value - current) / current) * 100, 1)
-            verdict = 'Undervalued' if dcf_value > current else 'Overvalued'
+            verdict    = "Undervalued" if dcf_value > current else "Overvalued"
             c1,c2,c3,c4 = st.columns(4)
             c1.metric("DCF Value",        f"Rs {round(dcf_value,1)}")
             c2.metric("Current Price",    f"Rs {current}")
@@ -392,3 +394,282 @@ try:
             c4.metric("Verdict",          verdict)
         else:
             st.warning("EPS unavailable — DCF cannot be calculated.")
+
+    with t3:
+        st.markdown("### Profit & Loss Statement (Rs Crores)")
+        try:
+            inc = stock.financials.copy()
+            if not inc.empty:
+                # Transpose and normalize columns to safe numeric types
+                inc = inc.T
+                inc.index = pd.to_datetime(inc.index).year
+                inc = inc.sort_index()
+                
+                # Resilient column checks to prevent key crashes
+                available_cols = [col for col in ["Total Revenue","Gross Profit","Operating Income","Net Income"] if col in inc.columns]
+                
+                if available_cols:
+                    # Dynamically convert elements to prevent text-based float parsing issues
+                    for col in available_cols:
+                        inc[col] = pd.to_numeric(inc[col], errors='coerce')
+                    
+                    st.dataframe((inc[available_cols]/1e7).style.format("{:,.1f}").background_gradient(cmap="Greens",axis=0), use_container_width=True)
+                    
+                    fig_pl = go.Figure()
+                    cf_colors = ["#3B82F6","#10B981","#F59E0B","#EF4444"]
+                    for i,col in enumerate(available_cols):
+                        fig_pl.add_trace(go.Bar(name=col, x=inc.index.astype(str), y=inc[col]/1e7, marker_color=cf_colors[i%4]))
+                    fig_pl.update_layout(template="plotly_dark", paper_bgcolor="#0A0F1D", plot_bgcolor="#0A0F1D",
+                        title="P&L Trend (Rs Cr)", barmode="group", height=400)
+                    st.plotly_chart(fig_pl, use_container_width=True)
+            else:
+                st.warning("P&L data matrices currently not synchronized by standard quote endpoints.")
+        except Exception as pl_err:
+            st.warning(f"P&L ledger generation update pending: {pl_err}")
+
+    with t4:
+        st.markdown("### Balance Sheet (Rs Crores)")
+        try:
+            bs = stock.balance_sheet.copy()
+            if not bs.empty:
+                bs = bs.T
+                bs.index = pd.to_datetime(bs.index).year
+                bs = bs.sort_index()
+                
+                # Resilient mapping matching alternate accounting naming systems
+                bs = bs.rename(columns={"Total Liabilities Net Minority Interest": "Total Liabilities"})
+                available_cols = [col for col in ["Total Assets","Total Liabilities","Stockholders Equity","Total Debt"] if col in bs.columns]
+                
+                if available_cols:
+                    for col in available_cols:
+                        bs[col] = pd.to_numeric(bs[col], errors='coerce')
+                        
+                    st.dataframe((bs[available_cols]/1e7).style.format("{:,.1f}").background_gradient(cmap="Blues",axis=0), use_container_width=True)
+                    fig_bs = go.Figure()
+                    for col in ["Total Assets","Stockholders Equity","Total Debt"]:
+                        if col in bs.columns:
+                            fig_bs.add_trace(go.Bar(name=col, x=bs.index.astype(str), y=bs[col]/1e7))
+                    fig_bs.update_layout(template="plotly_dark", paper_bgcolor="#0A0F1D", plot_bgcolor="#0A0F1D",
+                        title="Balance Sheet Trend (Rs Cr)", barmode="group", height=400)
+                    st.plotly_chart(fig_bs, use_container_width=True)
+            else:
+                st.warning("Balance sheet ledger currently not returning valid coordinates.")
+        except Exception as bs_err:
+            st.warning(f"Balance sheet matrix update pending: {bs_err}")
+
+    with t5:
+        st.markdown("### Cash Flow Statement (Rs Crores)")
+        try:
+            cf = stock.cashflow.copy()
+            if not cf.empty:
+                cf = cf.T
+                cf.index = pd.to_datetime(cf.index).year
+                cf = cf.sort_index()
+                available_cols = [col for col in ["Operating Cash Flow","Investing Cash Flow","Free Cash Flow","Capital Expenditure"] if col in cf.columns]
+                
+                if available_cols:
+                    for col in available_cols:
+                        cf[col] = pd.to_numeric(cf[col], errors='coerce')
+                        
+                    st.dataframe((cf[available_cols]/1e7).style.format("{:,.1f}"), use_container_width=True)
+                    colors_cf = ["#10B981","#F59E0B","#3B82F6","#EF4444"]
+                    fig_cf = go.Figure()
+                    for i,col in enumerate(available_cols):
+                        fig_cf.add_trace(go.Bar(name=col, x=cf.index.astype(str), y=cf[col]/1e7, marker_color=colors_cf[i%4]))
+                    fig_cf.update_layout(template="plotly_dark", paper_bgcolor="#0A0F1D", plot_bgcolor="#0A0F1D",
+                        title="Cash Flow Trend (Rs Cr)", barmode="group", height=400)
+                    st.plotly_chart(fig_cf, use_container_width=True)
+            else:
+                st.warning("Cash flows metrics currently processing structural updates.")
+        except Exception as cf_err:
+            st.warning(f"Cash flow reporting tracking details pending: {cf_err}")
+
+    # TRUE DYNAMIC MARKET SECTOR & INDUSTRY MATCHING PEER ENGINE FIXED
+    with t6:
+        st.markdown(f"### 👥 Competitor Peer Benchmarking (Dynamic Structural Industry Matching)")
+        
+        dynamic_peers_pool = []
+        
+        # Scrape and select only companies having exact same 'industry' parameter match
+        with st.spinner("Executing direct sector cross-matching..."):
+            for potential_peer in TICKER_UNIVERSE_POOL:
+                if potential_peer == ticker:
+                    continue
+                try:
+                    peer_obj = yf.Ticker(potential_peer)
+                    p_info = peer_obj.info
+                    
+                    # Core validation rule: Verify industry string matches perfectly
+                    if p_info.get('industry') == industry:
+                        dynamic_peers_pool.append({
+                            "Company": p_info.get("longName", potential_peer).replace(".NS", ""),
+                            "Price (Rs)": safe(p_info.get("currentPrice")),
+                            "Mkt Cap (Cr)": round((p_info.get("marketCap", 0) or 0) / 1e7, 0),
+                            "P/E": safe(p_info.get("trailingPE")),
+                            "Fwd P/E": safe(p_info.get("forwardPE")),
+                            "P/B": safe(p_info.get("priceToBook")),
+                            "EV/EBITDA": safe(p_info.get("enterpriseToEbitda")),
+                            "ROE %": safe(p_info.get("returnOnEquity"), 100, 1),
+                            "ROA %": safe(p_info.get("returnOnAssets"), 100, 1),
+                            "Net Margin %": safe(p_info.get("profitMargins"), 100, 1),
+                            "Debt/Eq": safe(p_info.get("debtToEquity")),
+                            "Rev Growth %": safe(p_info.get("revenueGrowth"), 100, 1),
+                            "EPS (Rs)": safe(p_info.get("trailingEps")),
+                            "Div Yield %": safe(p_info.get("dividendYield"), 100, 2),
+                            "Beta": safe(p_info.get("beta")),
+                        })
+                except:
+                    pass
+                    
+        # Include baseline stock details inside the dynamic pool for comparison layout
+        if dynamic_peers_pool:
+            # Injecting base tracked stock metrics as row index item 0
+            base_row = {
+                "Company": company_name, "Price (Rs)": current, "Mkt Cap (Cr)": round((mkt_cap or 0)/1e7, 0),
+                "P/E": pe, "Fwd P/E": fwd_pe, "P/B": pb, "EV/EBITDA": ev_ebitda, "ROE %": roe, "ROA %": roa,
+                "Net Margin %": profit_margin, "Debt/Eq": debt_eq, "Rev Growth %": rev_growth, "EPS (Rs)": eps,
+                "Div Yield %": div_yield, "Beta": beta
+            }
+            dynamic_peers_pool.insert(0, base_row)
+            
+            peers_df = pd.DataFrame(dynamic_peers_pool)
+            st.dataframe(
+                peers_df.style.format({
+                    "Price (Rs)":"{:,.2f}","Mkt Cap (Cr)":"{:,.0f}",
+                    "P/E":"{:.1f}x","Fwd P/E":"{:.1f}x","P/B":"{:.1f}x",
+                    "ROE %":"{:.1f}%","ROA %":"{:.1f}%",
+                    "Net Margin %":"{:.1f}%","Rev Growth %":"{:.1f}%","Div Yield %":"{:.2f}%",
+                }).highlight_max(subset=["ROE %","Net Margin %","Rev Growth %","EPS (Rs)"], color="#064e3b")
+                .highlight_min(subset=["P/E","Debt/Eq","P/B"], color="#064e3b"),
+                use_container_width=True, height=300
+            )
+            
+            metric_pick = st.selectbox("Visualize Metric:",
+                ["P/E","P/B","ROE %","Net Margin %","Rev Growth %","Debt/Eq","EV/EBITDA","EPS (Rs)","Beta"])
+            bar_colors = ["#3B82F6" if i==0 else "#374151" for i in range(len(peers_df))]
+            fig_peer = go.Figure(go.Bar(
+                x=peers_df["Company"], y=peers_df[metric_pick],
+                marker_color=bar_colors,
+                text=peers_df[metric_pick].round(1),
+                textposition="outside", textfont=dict(color="#F3F4F6")
+            ))
+            fig_peer.update_layout(template="plotly_dark", paper_bgcolor="#0A0F1D",
+                plot_bgcolor="#0A0F1D", title=f"{metric_pick} — Dynamic Peer Comparison",
+                height=420, xaxis_tickangle=-15)
+            st.plotly_chart(fig_peer, use_container_width=True)
+        else:
+            st.info(f"Analyzing proxy industry sectors... Pure peers list for {industry} currently undergoing pipeline matching.")
+
+    with t7:
+        st.markdown("### SWOT Strategic Analysis")
+        c_l,c_r = st.columns(2)
+        with c_l:
+            st.markdown("#### Strengths")
+            S = []
+            if roe > 15:           S.append(f"ROE {roe}% — above 15% benchmark")
+            if profit_margin > 10: S.append(f"Net margin {profit_margin}% — healthy")
+            if rev_growth > 10:    S.append(f"Revenue growing {rev_growth}% YoY")
+            if debt_eq < 0.5:      S.append(f"Low leverage — D/E {debt_eq}")
+            if curr_ratio > 1.5:   S.append(f"Strong liquidity — current ratio {curr_ratio}")
+            if ret_1y > 15:        S.append(f"Outperformed market — {ret_1y}% 1Y return")
+            if div_yield > 1:      S.append(f"Consistent dividends — yield {div_yield}%")
+            if beta < 1:           S.append(f"Low volatility — beta {beta}")
+            if not S:              S.append("Established company with stable operational history")
+            for s in S:
+                st.markdown(f"<div class='pro-card'>✅ {s}</div>", unsafe_allow_html=True)
+
+            st.markdown("#### Weaknesses")
+            W = []
+            if roe < 12:           W.append(f"ROE {roe}% below 15% benchmark")
+            if debt_eq > 1:        W.append(f"High leverage — D/E {debt_eq}")
+            if profit_margin < 8:  W.append(f"Thin margins at {profit_margin}%")
+            if pe > 50:            W.append(f"Premium valuation — P/E {pe}x")
+            if ret_1y < 0:         W.append(f"Negative 1Y return of {ret_1y}%")
+            if curr_ratio < 1:     W.append(f"Liquidity risk — current ratio {curr_ratio}")
+            if beta > 1.5:         W.append(f"High volatility — beta {beta}")
+            if not W:              W.append("Consistent execution needed to sustain valuations")
+            for w in W:
+                st.markdown(f"<div class='con-card'>❌ {w}</div>", unsafe_allow_html=True)
+
+        with c_r:
+            st.markdown("#### Opportunities")
+            for o in [
+                "India GDP 7%+ growth — strong macro tailwind",
+                f"{sector} sector seeing structural expansion in India",
+                "PLI schemes and government capex push",
+                "Growing middle class driving consumption upgrade",
+                "Digital India and financialization of savings",
+                "China+1 strategy — India gaining manufacturing share",
+            ]:
+                st.markdown(f"<div class='opp-card'>🚀 {o}</div>", unsafe_allow_html=True)
+
+            st.markdown("#### Threats")
+            for th in [
+                "Global macro uncertainty — FII outflows can pressure valuations",
+                "RBI monetary tightening — higher rates compress P/E multiples",
+                f"Intense competition in {industry}",
+                "Regulatory and compliance policy changes",
+                "INR depreciation impact on import-heavy businesses",
+                "Commodity price volatility affecting input costs",
+            ]:
+                st.markdown(f"<div class='threat-card'>⚠️ {th}</div>", unsafe_allow_html=True)
+
+    with t8:
+        st.markdown("### AI Quantitative Signal Engine")
+        score   = 0
+        signals = []
+        checks = [
+            (current > ema50_now,    f"Price Rs{current} above 50 EMA Rs{ema50_now}",   "Short-term bullish momentum",       f"Price below 50 EMA Rs{ema50_now}",    "Short-term bearish pressure"),
+            (current > ema200_now,   f"Price Rs{current} above 200 EMA Rs{ema200_now}", "Long-term uptrend intact",          f"Price below 200 EMA Rs{ema200_now}",  "Long-term downtrend"),
+            (ema50_now > ema200_now, "50 EMA above 200 EMA — Golden Cross",             "Bullish structural alignment",      "50 EMA below 200 EMA — Death Cross",   "Bearish structure"),
+            (30 < rsi_now < 70,      f"RSI {rsi_now} — Neutral zone",                  "Healthy momentum zone",             f"RSI {rsi_now} extreme reading",        "Overbought or oversold"),
+            (macd_now > 0,           f"MACD {macd_now} positive",                      "Bullish momentum confirmed",        f"MACD {macd_now} negative",             "Bearish momentum"),
+            (roe > 15,               f"ROE {roe}% strong returns",                      "High quality business",             f"ROE {roe}% below benchmark",           "Weak equity returns"),
+            (debt_eq < 0.5,          f"D/E {debt_eq} — low leverage",                  "Financial strength",                f"D/E {debt_eq} — high leverage",        "Balance sheet risk"),
+            (rev_growth > 10,        f"Revenue +{rev_growth}%",                         "Strong business momentum",          f"Revenue growth {rev_growth}%",         "Weak top-line growth"),
+        ]
+        for cond,pos_l,pos_n,neg_l,neg_n in checks:
+            if cond:
+                score += 1
+                signals.append(("✅", pos_l, pos_n, "#10B981"))
+            else:
+                signals.append(("❌", neg_l, neg_n, "#EF4444"))
+
+        for icon,label,note,color in signals:
+            st.markdown(f"""
+            <div style='background:#1F2937;border:1px solid #2D3748;border-left:3px solid {color};
+                        border-radius:8px;padding:12px 16px;margin:5px 0;
+                        display:flex;justify-content:space-between;align-items:center;'>
+                <span style='color:#F3F4F6;font-weight:600;font-size:14px;'>{icon} {label}</span>
+                <span style='color:#9CA3AF;font-size:13px;'>{note}</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        if score >= 7:
+            css,text,sub = "signal-buy",  "STRONG BUY",    f"Score {score}/8 — Exceptional alignment"
+        elif score >= 5:
+            css,text,sub = "signal-buy",  "BUY",           f"Score {score}/8 — Majority indicators bullish"
+        elif score == 4:
+            css,text,sub = "signal-hold", "HOLD / WATCH",  f"Score {score}/8 — Mixed signals"
+        elif score == 3:
+            css,text,sub = "signal-hold", "CAUTIOUS HOLD", f"Score {score}/8 — More bearish than bullish"
+        else:
+            css,text,sub = "signal-sell", "SELL / AVOID",  f"Score {score}/8 — Significant red flags"
+
+        st.markdown(f"<div class='{css}'>🎯 {text}</div>", unsafe_allow_html=True)
+        st.markdown(f"<p style='text-align:center;color:#9CA3AF;font-size:14px;margin-top:8px;'>{sub}</p>", unsafe_allow_html=True)
+        st.caption("For educational purposes only. Not financial advice.")
+
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    st.markdown("""
+    <p style='text-align:center;color:#6B7280;font-size:13px;'>
+    For educational purposes only. Not financial advice.<br>
+    Built by <b style='color:#F3F4F6;'>Pratyush Singh</b> |
+    MBA Banking & Financial Engineering | Chandigarh University
+    </p>
+    """, unsafe_allow_html=True)
+
+except Exception as e:
+    st.error(f"Error: {str(e)[:300]}")
+    st.info("Try again in 2 minutes — Yahoo Finance rate limits apply.")
