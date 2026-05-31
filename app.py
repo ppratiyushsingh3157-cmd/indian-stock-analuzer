@@ -385,3 +385,10 @@ try:
             dcf_value  = (future_eps * 15) / ((1 + dr/100) ** yr)
             mos        = round(((dcf_value - current) / current) * 100, 1)
             verdict = 'Undervalued' if dcf_value > current else 'Overvalued'
+            c1,c2,c3,c4 = st.columns(4)
+            c1.metric("DCF Value",        f"Rs {round(dcf_value,1)}")
+            c2.metric("Current Price",    f"Rs {current}")
+            c3.metric("Margin of Safety", f"{mos}%")
+            c4.metric("Verdict",          verdict)
+        else:
+            st.warning("EPS unavailable — DCF cannot be calculated.")
