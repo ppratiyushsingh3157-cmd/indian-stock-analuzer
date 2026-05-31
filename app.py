@@ -4,22 +4,21 @@ import pandas as pd
 import plotly.graph_objects as fh
 from plotly.subplots import make_subplots
 
-# Make sure matplotlib is available in the environment to prevent Styler gradient crashes
+# Set up clean app layout page configuration
+st.set_page_config(page_title="Equity Research & Portfolio Analytics Suite", layout="wide")
+
+# Ensure matplotlib is available in the background environment
 try:
     import matplotlib
 except ImportError:
-    st.error("Missing dependency: Please run 'pip install matplotlib' or add 'matplotlib' to requirements.txt")
-
-# Set up clean app layout page configuration
-st.set_page_config(page_title="Equity Research & Portfolio Analytics Engine", layout="wide")
+    st.error("Missing dependency: Please ensure 'matplotlib' is installed via pip.")
 
 # -------------------------------------------------------------------
-# 1. SIDEBAR CONFIGURATION & TICKER DICTIONARY (NIFTY 100 UPDATED)
+# 1. SIDEBAR CONFIGURATION & TICKER DICTIONARY (NIFTY 100)
 # -------------------------------------------------------------------
 st.sidebar.title("📊 Equity Research Suite")
 st.sidebar.subheader("BFE Analytics Engine")
 
-# Complete Nifty 100 mapping list for comprehensive peer extraction & selection
 nifty_100_tickers = {
     "ABB India": "ABB.NS", "ACC": "ACC.NS", "Adani Enterprises": "ADANIENT.NS", 
     "Adani Green Energy": "ADANIGREEN.NS", "Adani Ports": "ADANIPORTS.NS", "Adani Power": "ADANIPOWER.NS",
@@ -57,14 +56,12 @@ nifty_100_tickers = {
 selected_display_name = st.sidebar.selectbox("Select Target Enterprise", list(nifty_100_tickers.keys()))
 target_ticker = nifty_100_tickers[selected_display_name]
 
-# Time horizon configuration for tracking historical series data
 chart_period = st.sidebar.selectbox("Analysis Horizon", ["1 Month", "3 Months", "1 Year", "5 Years"], index=2)
 period_mapping = {"1 Month": "1mo", "3 Months": "3mo", "1 Year": "1y", "5 Years": "5y"}
 selected_period = period_mapping[chart_period]
 
 st.title(f"🔍 Analytics Dashboard: {selected_display_name} ({target_ticker.replace('.NS','')})")
 
-# Fetch central yfinance instance anchor
 @st.cache_data(ttl=3600)
 def load_financial_profile(ticker_symbol):
     ticker_obj = yf.Ticker(ticker_symbol)
@@ -77,7 +74,7 @@ except Exception as e:
     st.error(f"Data connection timeout for {target_ticker}. Details: {e}")
     st.stop()
 
-# Top KPIs Ribbon Display Row Layout
+# Top KPIs Ribbon Display
 kpi1, kpi2, kpi3, kpi4 = st.columns(4)
 kpi1.metric("Current Stock Price", f"₹ {info_dict.get('currentPrice', 'N/A')}")
 kpi2.metric("Market Cap (Cr)", f"₹ {round(info_dict.get('marketCap', 0) / 10000000, 2):,}" if info_dict.get('marketCap') else "N/A")
@@ -86,38 +83,29 @@ kpi4.metric("Enterprise Value / EBITDA", f"{round(info_dict.get('enterpriseToEbi
 
 st.markdown("---")
 
-# Main Interface Tab Navigation System Creation
 t1, t2, t3, t4 = st.tabs(["📈 Dynamic Technical Charts", "📋 Financial Statements Data", "👥 Peer Group Benchmarking", "🎯 Intrinsic Valuation Mode"])
 
 # ===================================================================
-# TAB 1: DYNAMIC TECHNICAL CHARTS (LABELS + WEEKEND FIX INCLUDED)
+# TAB 1: DYNAMIC TECHNICAL CHARTS
 # ===================================================================
 with t1:
     st.subheader("Technical Matrix Indicators Panel")
-    
-    # Select resolution spacing depending on selected horizon window length
     interval_setting = "1d"
     if selected_period == "1mo":
-        interval_setting = "1h" # Finer hourly structure resolution for shorter windows
+        interval_setting = "1h"
         
     hist_prices = ticker_instance.history(period=selected_period, interval=interval_setting)
     
     if hist_prices.empty:
         st.warning("Insufficient trading interval data returned for this asset selection.")
     else:
-        # Technical Metric Mathematical Vector Engines Execution Block
-        # 1. Simple Moving Averages
         hist_prices['SMA_20'] = hist_prices['Close'].rolling(window=20).mean()
-        
-        # 2. Bollinger Bands Setup Engine
         rolling_std = hist_prices['Close'].rolling(window=20).std()
         hist_prices['BB_Upper'] = hist_prices['SMA_20'] + (2 * rolling_std)
         hist_prices['BB_Lower'] = hist_prices['SMA_20'] - (2 * rolling_std)
         
-        # 3. Volume Weighted Average Price (VWAP Calculation Engine Process)
         hist_prices['VWAP'] = (hist_prices['Volume'] * (hist_prices['High'] + hist_prices['Low'] + hist_prices['Close']) / 3).cumsum() / hist_prices['Volume'].cumsum()
         
-        # 4. Relative Strength Index (RSI Vector Engine Generation Loop)
         price_delta = hist_prices['Close'].diff()
         positive_gains = price_delta.clip(lower=0)
         negative_losses = -1 * price_delta.clip(upper=0)
@@ -126,29 +114,21 @@ with t1:
         rs_factor = ema_gains / ema_losses.replace(0, 0.00001)
         hist_prices['RSI_14'] = 100 - (100 / (1 + rs_factor))
         
-        # Build Dual-Panel Component Figure Canvas Interface Architecture
-        fh_chart = make_subplots(rows=2, cols=1, shared_xaxes=True, 
-                                 vertical_spacing=0.08, row_heights=[0.7, 0.3])
+        fh_chart = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.08, row_heights=[0.7, 0.3])
         
-        # Core Candlestick Overlay Track Creation Trace
         fh_chart.add_trace(fh.Candlestick(
             x=hist_prices.index, open=hist_prices['Open'], high=hist_prices['High'],
             low=hist_prices['Low'], close=hist_prices['Close'], name="Price Action"
         ), row=1, col=1)
         
-        # Technical Indicator Overlays Trace Appends
         fh_chart.add_trace(fh.Scatter(x=hist_prices.index, y=hist_prices['VWAP'], line=dict(color='orange', width=1.5), name='VWAP'), row=1, col=1)
         fh_chart.add_trace(fh.Scatter(x=hist_prices.index, y=hist_prices['BB_Upper'], line=dict(color='rgba(173,216,230,0.6)', width=1, dash='dash'), name='BB Upper'), row=1, col=1)
         fh_chart.add_trace(fh.Scatter(x=hist_prices.index, y=hist_prices['BB_Lower'], line=dict(color='rgba(173,216,230,0.6)', width=1, dash='dash'), name='BB Lower'), row=1, col=1)
         
-        # Lower Subplot RSI Oscillation Data Trace
         fh_chart.add_trace(fh.Scatter(x=hist_prices.index, y=hist_prices['RSI_14'], line=dict(color='#3a86ff', width=1.8), name='RSI (14)'), row=2, col=1)
-        
-        # RSI Overbought/Oversold Threshold Context Guide Lines
         fh_chart.add_hline(y=70, line_dash="dash", line_color="rgba(255,0,0,0.4)", row=2, col=1)
         fh_chart.add_hline(y=30, line_dash="dash", line_color="rgba(0,255,0,0.4)", row=2, col=1)
         
-        # 🛠️ FIXED: Clear explicit text orientation labels inside the layout panels
         fh_chart.update_layout(
             height=650,
             xaxis_rangeslider_visible=False,
@@ -169,19 +149,16 @@ with t1:
             ]
         )
         
-        # 🛠️ FIXED: Remove empty weekend market calendar gaps from formatting timeline array
         fh_chart.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"])])
-        
         st.plotly_chart(fh_chart, use_container_width=True)
 
 # ===================================================================
-# TAB 2: FINANCIAL STATEMENTS DATA (SAFE PANDAS GRADIENT STYLING)
+# TAB 2: FINANCIAL STATEMENTS DATA
 # ===================================================================
 with t2:
     st.subheader("Core Financial Statement Matrices")
     statement_view = st.radio("Toggle Document Perspective", ["Income Statement", "Balance Sheet", "Cash Flow"], horizontal=True)
     
-    # Local try-catch matrix block with numerical parsing sanitization pipelines
     try:
         if statement_view == "Income Statement":
             raw_matrix = ticker_instance.financials
@@ -193,17 +170,13 @@ with t2:
         if raw_matrix is None or raw_matrix.empty:
             st.warning(f"No indexed reports records found on Yahoo Finance for {target_ticker}")
         else:
-            # Format and convert values to standard Indian Crores notation metrics
             display_matrix = raw_matrix.copy()
-            
-            # Clean non-numeric cells safely before scaling matrix by 10 million (Cr)
             for col in display_matrix.columns:
                 display_matrix[col] = pd.to_numeric(display_matrix[col], errors='coerce')
                 
             display_matrix_crores = display_matrix / 10000000
             display_matrix_crores = display_matrix_crores.round(2).fillna("-")
             
-            # Use background gradients safely. If matplotlib is missing, fall back to unstyled table
             try:
                 styled_view = display_matrix_crores.style.background_gradient(axis=1, cmap="RdYlGn")
                 st.dataframe(styled_view, use_container_width=True)
@@ -212,24 +185,21 @@ with t2:
                 
             st.caption("All statement line-item figures listed above are calibrated in Indian Crores (₹ Cr).")
     except Exception as financial_err:
-        st.error(f"Failed to compile financial statements report presentation data models: {financial_err}")
+        st.error(f"Failed to compile financial statements: {financial_err}")
 
 # ===================================================================
-# TAB 3: PEER GROUP BENCHMARKING (SCREENER.IN PEER FALLBACK FIX)
+# TAB 3: PEER GROUP BENCHMARKING
 # ===================================================================
 with t3:
     st.subheader("Sector Comparative Peer Benchmarking")
     
-    # 🛠️ FIXED: Comprehensive peer dataset matching map mimicking Screener.in's system
     @st.cache_data(ttl=3600)
     def gather_sector_peer_nodes(current_symbol, target_name):
-        # Base mapping definitions for top industry cohorts to safeguard against yfinance sector gaps
         energy_oil_peers = ["RELIANCE.NS", "BPCL.NS", "IOC.NS", "HPCL.NS", "MRPL.NS", "CHENNPETRO.NS"]
         it_services_peers = ["TCS.NS", "INFY.NS", "HCLTECH.NS", "WIPRO.NS", "TECHM.NS", "LTIM.NS"]
         banking_peers = ["HDFCBANK.NS", "ICICIBANK.NS", "AXISBANK.NS", "KOTAKBANK.NS", "SBIN.NS", "BANKBARODA.NS"]
         auto_peers = ["TATAMOTORS.NS", "MARUTI.NS", "M&M.NS", "EICHERMOT.NS", "BAJAJ-AUTO.NS", "TVSMOTOR.NS"]
         
-        # Crosscheck entity name indicators to load custom groups directly
         if "RELIANCE" in current_symbol.upper() or "RELIANCE" in target_name.upper():
             return energy_oil_peers
         elif any(x in current_symbol.upper() for x in ["TCS", "INFY", "WIPRO", "HCL"]):
@@ -239,11 +209,9 @@ with t3:
         elif any(x in current_symbol.upper() for x in ["MOTOR", "MARUTI", "BAJAJ"]):
             return auto_peers
             
-        # Standard default fallback if ticker does not fall into a predefined group
         return ["RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "INFY.NS", "BHARTIARTL.NS"]
 
     peer_ticker_list = gather_sector_peer_nodes(target_ticker, selected_display_name)
-    
     peer_records_accumulator = []
     
     with st.spinner("Compiling competitive benchmarking tables..."):
@@ -260,7 +228,7 @@ with t3:
                     "Return on Equity (ROE %)": round(peer_info.get("returnOnEquity", 0) * 100, 2) if peer_info.get("returnOnEquity") else None
                 })
             except Exception:
-                continue # Skip failing connections smoothly to preserve the rest of the table
+                continue
                 
     if peer_records_accumulator:
         benchmarking_dataframe = pd.DataFrame(peer_records_accumulator)
@@ -269,35 +237,30 @@ with t3:
         st.warning("Could not cross-reference market data feeds for peers.")
 
 # ===================================================================
-# TAB 4: INTRINSIC VALUATION MODE (DCF CALCULATION PIPELINE)
+# TAB 4: INTRINSIC VALUATION MODE (DCF WITH CLEAN INDENTATION)
 # ===================================================================
 with t4:
     st.subheader("Discounted Cash Flow (DCF) Valuation Engine")
     st.markdown("Calculate intrinsic equity values using traditional growth projection assumptions.")
     
-    # Extract baseline inputs for DCF calculations safely
     historical_eps = info_dict.get('trailingEps')
     
     if not historical_eps or historical_eps <= 0:
         st.warning("⚠️ Trailing 12-Month EPS is negative or missing. Traditional positive-growth DCF models require positive baseline earnings.")
         historical_eps = st.number_input("Manually enter a normalized baseline positive EPS value to unlock modeling:", value=10.0, step=1.0)
         
-    # Interactive variables adjustment console blocks
     vc1, vc2, vc3 = st.columns(3)
     growth_stage_1 = vc1.slider("Stage 1 Growth Rate (Years 1-5 %)", min_value=1.0, max_value=40.0, value=12.0, step=0.5) / 100
     growth_stage_2 = vc2.slider("Stage 2 Growth Rate (Years 6-10 %)", min_value=1.0, max_value=30.0, value=6.0, step=0.5) / 100
     discount_rate_wacc = vc3.slider("Required Rate of Discount / WACC (%)", min_value=5.0, max_value=25.0, value=11.0, step=0.5) / 100
     
-    terminal_growth_g = 0.04 # Conservative terminal rate mapping representation
+    terminal_growth_g = 0.04
     
-    # Execution function block for the 10-Year projection pipeline
     projected_eps_series = []
     discount_factors_series = []
     pv_earnings_series = []
-    
     current_eps_cursor = historical_eps
     
-    # Year 1 through 5 projection loop execution
     for year_idx in range(1, 6):
         current_eps_cursor *= (1 + growth_stage_1)
         discount_multiplier = (1 + discount_rate_wacc) ** year_idx
@@ -307,7 +270,6 @@ with t4:
         discount_factors_series.append(discount_multiplier)
         pv_earnings_series.append(present_value_step)
         
-    # Year 6 through 10 projection loop execution
     for year_idx in range(6, 11):
         current_eps_cursor *= (1 + growth_stage_2)
         discount_multiplier = (1 + discount_rate_wacc) ** year_idx
@@ -317,7 +279,6 @@ with t4:
         discount_factors_series.append(discount_multiplier)
         pv_earnings_series.append(present_value_step)
         
-    # Terminal Value calculation logic at Year 10 horizon edge
     estimated_terminal_value = (projected_eps_series[-1] * (1 + terminal_growth_g)) / (discount_rate_wacc - terminal_growth_g)
     pv_of_terminal_value = estimated_terminal_value / discount_factors_series[-1]
     
@@ -325,12 +286,12 @@ with t4:
     current_market_price = info_dict.get('currentPrice', 1.0)
     variance_pct = ((calculated_intrinsic_value - current_market_price) / current_market_price) * 100
     
-    # Valuation Output Presentation Summary Block
     st.markdown("---")
     res1, res2, res3 = st.columns(3)
     res1.metric("Calculated Intrinsic Value", f"₹ {round(calculated_intrinsic_value, 2)}")
     res2.metric("Market Price (Current)", f"₹ {round(current_market_price, 2)}")
     
+    # Perfectly aligned if-else block to guarantee no syntax crash
     if variance_pct > 0:
         res3.metric("Valuation Margin", f"Undervalued by {round(variance_pct, 1)}%", delta=f"{round(variance_pct, 1)}% Margin of Safety")
     else:
