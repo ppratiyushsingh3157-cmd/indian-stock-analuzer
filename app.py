@@ -1,140 +1,129 @@
 import streamlit as st
 import yfinance as yf
 import pandas as pd
-import numpy as np
 
-st.set_page_config(page_title="Hedge Fund Terminal", layout="wide")
+st.set_page_config(page_title="Screener Clone", layout="wide")
 
-st.title("💼 Hedge Fund Research Terminal")
-st.caption("Quant + Fundamental + Momentum Stock Intelligence System")
+st.title("📊 Screener.in Style Stock Research Tool")
+st.caption("Search stocks • Screen • Analyze • Compare")
 
 # ---------------- WATCHLIST ----------------
 WATCHLIST = [
-    "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA",
-    "NVDA", "META", "NFLX",
     "RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS",
-    "ICICIBANK.NS", "LT.NS", "SBIN.NS"
+    "ICICIBANK.NS", "SBIN.NS", "LT.NS", "ITC.NS",
+    "AAPL", "MSFT", "GOOGL", "AMZN"
 ]
 
-# ---------------- DATA ----------------
+# ---------------- FETCH FUNCTION ----------------
 @st.cache_data
-def get_data(ticker):
+def get_stock(ticker):
     stock = yf.Ticker(ticker)
     info = stock.info
     hist = stock.history(period="1y")
+    return info, hist
 
-    if hist.empty:
-        return None
+# ---------------- SEARCH SECTION ----------------
+st.subheader("🔎 Search Any Stock")
 
-    returns = hist["Close"].pct_change().dropna()
+query = st.text_input("Enter Stock Symbol (e.g. RELIANCE.NS, TCS.NS, AAPL)")
 
-    return {
-        "ticker": ticker,
-        "price": info.get("currentPrice"),
-        "pe": info.get("trailingPE"),
-        "roe": info.get("returnOnEquity", 0),
-        "debt_equity": info.get("debtToEquity"),
-        "market_cap": info.get("marketCap"),
-        "sector": info.get("sector"),
-        "volatility": returns.std() * np.sqrt(252),  # annualized
-        "momentum": (hist["Close"].iloc[-1] / hist["Close"].iloc[0]) - 1,
-        "hist": hist
-    }
+if query:
 
-# ---------------- SCORING ENGINE ----------------
-def score_stock(s):
-    score = 0
+    info, hist = get_stock(query)
 
-    # Value
-    if s["pe"] and s["pe"] < 25:
-        score += 2
+    if not hist.empty:
 
-    # Quality
-    if s["roe"] and s["roe"] > 0.15:
-        score += 2
+        st.subheader(f"🏢 {info.get('shortName')}")
 
-    # Risk control
-    if s["debt_equity"] and s["debt_equity"] < 1:
-        score += 1
+        # ---------------- METRICS ----------------
+        col1, col2, col3, col4 = st.columns(4)
 
-    # Momentum
-    if s["momentum"] > 0.1:
-        score += 2
+        col1.metric("Price", info.get("currentPrice"))
+        col2.metric("P/E", info.get("trailingPE"))
+        col3.metric("ROE", info.get("returnOnEquity"))
+        col4.metric("Market Cap", info.get("marketCap"))
 
-    # Risk penalty
-    if s["volatility"] < 0.3:
-        score += 1
+        st.divider()
 
-    return score
+        # ---------------- FUNDAMENTALS ----------------
+        st.subheader("📊 Fundamentals")
 
-# ---------------- LOAD ALL ----------------
+        df = pd.DataFrame([{
+            "Sector": info.get("sector"),
+            "Industry": info.get("industry"),
+            "P/B": info.get("priceToBook"),
+            "Debt/Equity": info.get("debtToEquity"),
+            "Profit Margin": info.get("profitMargins"),
+            "52W High": info.get("fiftyTwoWeekHigh"),
+            "52W Low": info.get("fiftyTwoWeekLow"),
+        }])
+
+        st.dataframe(df, use_container_width=True)
+
+        # ---------------- 52 WEEK RANGE ----------------
+        st.subheader("📈 52 Week Position")
+
+        price = info.get("currentPrice")
+        low = info.get("fiftyTwoWeekLow")
+        high = info.get("fiftyTwoWeekHigh")
+
+        if price and low and high:
+            progress = (price - low) / (high - low)
+            st.progress(float(progress))
+            st.write(f"Low: {low} | High: {high}")
+
+        # ---------------- CHART ----------------
+        st.subheader("📉 Price Chart (1 Year)")
+        st.line_chart(hist["Close"])
+
+        # ---------------- SIMPLE SCORING ----------------
+        st.subheader("🧠 Quick Analysis")
+
+        score = 0
+
+        if info.get("trailingPE") and info["trailingPE"] < 25:
+            score += 1
+
+        if info.get("returnOnEquity") and info["returnOnEquity"] > 0.15:
+            score += 1
+
+        if info.get("debtToEquity") and info["debtToEquity"] < 1:
+            score += 1
+
+        if score == 3:
+            st.success("🟢 Strong Stock (Good Fundamentals)")
+        elif score == 2:
+            st.warning("🟡 Neutral Stock")
+        else:
+            st.error("🔴 Weak Fundamentals")
+
+# ---------------- SCREENER ----------------
+st.divider()
+st.subheader("📊 Mini Screener (Top Stocks)")
+
 data = []
+
 for t in WATCHLIST:
-    d = get_data(t)
-    if d:
-        d["score"] = score_stock(d)
-        data.append(d)
+    info, _ = get_stock(t)
+
+    data.append({
+        "Stock": t,
+        "Price": info.get("currentPrice"),
+        "PE": info.get("trailingPE"),
+        "ROE": info.get("returnOnEquity"),
+        "Market Cap": info.get("marketCap")
+    })
 
 df = pd.DataFrame(data)
 
-# ---------------- SIDEBAR ----------------
-st.sidebar.header("🎯 Hedge Fund Filters")
+# filters
+max_pe = st.slider("Max P/E", 0, 100, 30)
+min_roe = st.slider("Min ROE", 0.0, 1.0, 0.15)
 
-min_score = st.sidebar.slider("Min Score", 0, 8, 4)
-sector_filter = st.sidebar.multiselect("Sector Filter", df["sector"].dropna().unique())
+filtered = df[
+    (df["PE"].fillna(999) <= max_pe) &
+    (df["ROE"].fillna(0) >= min_roe)
+]
 
-filtered = df[df["score"] >= min_score]
+st.dataframe(filtered, use_container_width=True)
 
-if sector_filter:
-    filtered = filtered[filtered["sector"].isin(sector_filter)]
-
-# ---------------- TOP PICKS ----------------
-st.subheader("🏆 Top Hedge Fund Picks")
-
-top = filtered.sort_values("score", ascending=False).head(5)
-
-st.dataframe(
-    top[["ticker", "price", "pe", "roe", "momentum", "volatility", "score"]],
-    use_container_width=True
-)
-
-# ---------------- FULL SCREEN ----------------
-st.subheader("📊 Full Universe Ranking")
-
-st.dataframe(
-    filtered.sort_values("score", ascending=False),
-    use_container_width=True
-)
-
-# ---------------- STOCK DEEP DIVE ----------------
-st.subheader("🔍 Stock Deep Dive")
-
-selected = st.selectbox("Select Stock", df["ticker"])
-
-stock = df[df["ticker"] == selected].iloc[0]
-
-col1, col2, col3, col4 = st.columns(4)
-
-col1.metric("Price", stock["price"])
-col2.metric("Score", stock["score"])
-col3.metric("Momentum", round(stock["momentum"], 2))
-col4.metric("Volatility", round(stock["volatility"], 2))
-
-st.markdown("### 📌 Hedge Fund View")
-
-if stock["score"] >= 6:
-    st.success("🟢 Strong Institutional Buy Candidate")
-elif stock["score"] >= 4:
-    st.warning("🟡 Watch / Accumulate Zone")
-else:
-    st.error("🔴 Avoid / High Risk")
-
-# ---------------- CHART ----------------
-st.subheader("📈 Price Action (1Y)")
-
-st.line_chart(stock["hist"]["Close"])
-
-# ---------------- RISK DASHBOARD ----------------
-st.subheader("⚖️ Risk vs Return Map")
-
-st.scatter_chart(df[["momentum", "volatility"]])
