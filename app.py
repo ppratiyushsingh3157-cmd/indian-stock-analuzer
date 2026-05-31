@@ -384,4 +384,4 @@ try:
             future_eps = eps * ((1 + g/100) ** yr)
             dcf_value  = (future_eps * 15) / ((1 + dr/100) ** yr)
             mos        = round(((dcf_value - current) / current) * 100, 1)
-            verdict    = "Undervalued" if dcf_value > current else "Overvalued"
+            verdict = 'Undervalued' if dcf_value > current else 'Overvalued'
