@@ -1,7 +1,7 @@
 import streamlit as st
 import yfinance as yf
 import pandas as pd
-import plotly.graph_objects as fh
+import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 # Set up clean app layout page configuration
@@ -114,18 +114,20 @@ with t1:
         rs_factor = ema_gains / ema_losses.replace(0, 0.00001)
         hist_prices['RSI_14'] = 100 - (100 / (1 + rs_factor))
         
+        # Fixed naming definition structure here
         fh_chart = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.08, row_heights=[0.7, 0.3])
         
-        fh_chart.add_trace(fh.Candlestick(
+        # FIXED: Using standard go.Candlestick and go.Scatter consistently
+        fh_chart.add_trace(go.Candlestick(
             x=hist_prices.index, open=hist_prices['Open'], high=hist_prices['High'],
             low=hist_prices['Low'], close=hist_prices['Close'], name="Price Action"
         ), row=1, col=1)
         
-        fh_chart.add_trace(fh.Scatter(x=hist_prices.index, y=hist_prices['VWAP'], line=dict(color='orange', width=1.5), name='VWAP'), row=1, col=1)
-        fh_chart.add_trace(fh.Scatter(x=hist_prices.index, y=hist_prices['BB_Upper'], line=dict(color='rgba(173,216,230,0.6)', width=1, dash='dash'), name='BB Upper'), row=1, col=1)
-        fh_chart.add_trace(fh.Scatter(x=hist_prices.index, y=hist_prices['BB_Lower'], line=dict(color='rgba(173,216,230,0.6)', width=1, dash='dash'), name='BB Lower'), row=1, col=1)
+        fh_chart.add_trace(go.Scatter(x=hist_prices.index, y=hist_prices['VWAP'], line=dict(color='orange', width=1.5), name='VWAP'), row=1, col=1)
+        fh_chart.add_trace(go.Scatter(x=hist_prices.index, y=hist_prices['BB_Upper'], line=dict(color='rgba(173,216,230,0.6)', width=1, dash='dash'), name='BB Upper'), row=1, col=1)
+        fh_chart.add_trace(go.Scatter(x=hist_prices.index, y=hist_prices['BB_Lower'], line=dict(color='rgba(173,216,230,0.6)', width=1, dash='dash'), name='BB Lower'), row=1, col=1)
         
-        fh_chart.add_trace(fh.Scatter(x=hist_prices.index, y=hist_prices['RSI_14'], line=dict(color='#3a86ff', width=1.8), name='RSI (14)'), row=2, col=1)
+        fh_chart.add_trace(go.Scatter(x=hist_prices.index, y=hist_prices['RSI_14'], line=dict(color='#3a86ff', width=1.8), name='RSI (14)'), row=2, col=1)
         fh_chart.add_hline(y=70, line_dash="dash", line_color="rgba(255,0,0,0.4)", row=2, col=1)
         fh_chart.add_hline(y=30, line_dash="dash", line_color="rgba(0,255,0,0.4)", row=2, col=1)
         
@@ -203,7 +205,7 @@ with t3:
         if "RELIANCE" in current_symbol.upper() or "RELIANCE" in target_name.upper():
             return energy_oil_peers
         elif any(x in current_symbol.upper() for x in ["TCS", "INFY", "WIPRO", "HCL"]):
-            return it_services_peers
+            return fit_services_peers
         elif any(x in current_symbol.upper() for x in ["BANK", "SBIN"]):
             return banking_peers
         elif any(x in current_symbol.upper() for x in ["MOTOR", "MARUTI", "BAJAJ"]):
@@ -237,7 +239,7 @@ with t3:
         st.warning("Could not cross-reference market data feeds for peers.")
 
 # ===================================================================
-# TAB 4: INTRINSIC VALUATION MODE (DCF WITH CLEAN INDENTATION)
+# TAB 4: INTRINSIC VALUATION MODE
 # ===================================================================
 with t4:
     st.subheader("Discounted Cash Flow (DCF) Valuation Engine")
@@ -291,7 +293,6 @@ with t4:
     res1.metric("Calculated Intrinsic Value", f"₹ {round(calculated_intrinsic_value, 2)}")
     res2.metric("Market Price (Current)", f"₹ {round(current_market_price, 2)}")
     
-    # Perfectly aligned if-else block to guarantee no syntax crash
     if variance_pct > 0:
         res3.metric("Valuation Margin", f"Undervalued by {round(variance_pct, 1)}%", delta=f"{round(variance_pct, 1)}% Margin of Safety")
     else:
