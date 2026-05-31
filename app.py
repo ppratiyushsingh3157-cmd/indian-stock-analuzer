@@ -69,7 +69,7 @@ def load_financial_profile(ticker_symbol):
 
 try:
     with st.spinner("Compiling fundamental metrics matrices..."):
-        info_dict, ticker_instance = load_financial_profile(target_ticker)
+        info_dict = load_financial_profile(target_ticker) ticker_instance = yf.Ticker(target_ticker)
 except Exception as e:
     st.error(f"Data connection timeout for {target_ticker}. Details: {e}")
     st.stop()
