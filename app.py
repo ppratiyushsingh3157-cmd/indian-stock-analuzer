@@ -422,7 +422,7 @@ try:
     df_1y = df_full.tail(365).copy()
     ret_1y = round(((df_1y["Close"].iloc[-1]/df_1y["Close"].iloc[0])-1)*100, 2)
 
-    rsi_now  = round(df["RSI"].iloc[-1],  1) if not pd.isna(df["RSI"].iloc[-1"])  else 50
+    rsi_now  = round(df["RSI"].iloc[-1],  1) if not pd.isna(df["RSI"].iloc[-1])  else 50
     ema50_now  = round(df["EMA50"].iloc[-1],  1)
     ema200_now = round(df["EMA200"].iloc[-1], 1)
     macd_now   = round(df["MACD"].iloc[-1],   2)
