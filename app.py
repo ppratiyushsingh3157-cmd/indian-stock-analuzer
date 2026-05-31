@@ -114,10 +114,8 @@ with t1:
         rs_factor = ema_gains / ema_losses.replace(0, 0.00001)
         hist_prices['RSI_14'] = 100 - (100 / (1 + rs_factor))
         
-        # Fixed naming definition structure here
         fh_chart = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.08, row_heights=[0.7, 0.3])
         
-        # FIXED: Using standard go.Candlestick and go.Scatter consistently
         fh_chart.add_trace(go.Candlestick(
             x=hist_prices.index, open=hist_prices['Open'], high=hist_prices['High'],
             low=hist_prices['Low'], close=hist_prices['Close'], name="Price Action"
@@ -202,13 +200,16 @@ with t3:
         banking_peers = ["HDFCBANK.NS", "ICICIBANK.NS", "AXISBANK.NS", "KOTAKBANK.NS", "SBIN.NS", "BANKBARODA.NS"]
         auto_peers = ["TATAMOTORS.NS", "MARUTI.NS", "M&M.NS", "EICHERMOT.NS", "BAJAJ-AUTO.NS", "TVSMOTOR.NS"]
         
-        if "RELIANCE" in current_symbol.upper() or "RELIANCE" in target_name.upper():
+        clean_symbol = str(current_symbol).upper()
+        clean_name = str(target_name).upper()
+        
+        if "RELIANCE" in clean_symbol or "RELIANCE" in clean_name:
             return energy_oil_peers
-        elif any(x in current_symbol.upper() for x in ["TCS", "INFY", "WIPRO", "HCL"]):
-            return fit_services_peers
-        elif any(x in current_symbol.upper() for x in ["BANK", "SBIN"]):
+        elif any(x in clean_symbol for x in ["TCS", "INFY", "WIPRO", "HCL", "TECHM", "LTIM"]):
+            return it_services_peers
+        elif any(x in clean_symbol for x in ["BANK", "SBIN", "AXIS", "KOTAK"]):
             return banking_peers
-        elif any(x in current_symbol.upper() for x in ["MOTOR", "MARUTI", "BAJAJ"]):
+        elif any(x in clean_symbol for x in ["MOTOR", "MARUTI", "BAJAJ", "EICHER", "TVS"]):
             return auto_peers
             
         return ["RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "INFY.NS", "BHARTIARTL.NS"]
